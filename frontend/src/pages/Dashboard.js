@@ -36,6 +36,20 @@ function formatCatalogPrice(value) {
   return Number(value || 0) > 0 ? formatCurrency(value) : "Se calcula con la compra";
 }
 
+function normalizeSearchValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function matchesSearch(query, ...values) {
+  const normalizedQuery = normalizeSearchValue(query);
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return values.some((value) => normalizeSearchValue(value).includes(normalizedQuery));
+}
+
 function getOrderActions(estado) {
   if (estado === "pendiente") {
     return [
@@ -217,7 +231,12 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [processingOrderId, setProcessingOrderId] = useState(null);
+  const [orderQuery, setOrderQuery] = useState("");
   const [productQuery, setProductQuery] = useState("");
+  const [userQuery, setUserQuery] = useState("");
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [brandQuery, setBrandQuery] = useState("");
+  const [providerQuery, setProviderQuery] = useState("");
   const [userForm, setUserForm] = useState(initialUserForm);
   const [productForm, setProductForm] = useState(initialProductForm);
   const [purchaseForm, setPurchaseForm] = useState(initialPurchaseForm);
@@ -407,6 +426,43 @@ function Dashboard() {
       );
     });
   }, [productQuery, products]);
+
+  const visibleOrders = useMemo(() => {
+    return orders.filter((order) =>
+      matchesSearch(orderQuery, order.id, order.cliente, order.estado, order.total)
+    );
+  }, [orderQuery, orders]);
+
+  const visibleUsers = useMemo(() => {
+    return users.filter((item) =>
+      matchesSearch(userQuery, item.nombre, item.email, item.rol, item.activo ? "activo" : "inactivo")
+    );
+  }, [userQuery, users]);
+
+  const visibleCategories = useMemo(() => {
+    return catalogos.categorias.filter((item) =>
+      matchesSearch(categoryQuery, item.nombre, item.descripcion, item.activo ? "activa" : "inactiva")
+    );
+  }, [catalogos.categorias, categoryQuery]);
+
+  const visibleBrands = useMemo(() => {
+    return catalogos.marcas.filter((item) =>
+      matchesSearch(brandQuery, item.nombre, item.descripcion, item.activo ? "activa" : "inactiva")
+    );
+  }, [brandQuery, catalogos.marcas]);
+
+  const visibleProviders = useMemo(() => {
+    return catalogos.proveedores.filter((item) =>
+      matchesSearch(
+        providerQuery,
+        item.nombre,
+        item.nit,
+        item.email,
+        item.telefono,
+        item.direccion
+      )
+    );
+  }, [catalogos.proveedores, providerQuery]);
 
   const pendingOrdersCount = useMemo(
     () => orders.filter((order) => order.estado === "pendiente").length,
@@ -1203,6 +1259,23 @@ function Dashboard() {
               ) : null}
             </div>
 
+          <div className="filter-toolbar">
+            <input
+              className="search-input"
+              value={orderQuery}
+              onChange={(event) => setOrderQuery(event.target.value)}
+              placeholder="Busca por pedido, cliente o estado"
+            />
+            <button
+              className="btn btn-outline"
+              type="button"
+              onClick={() => setOrderQuery("")}
+              disabled={!orderQuery}
+            >
+              Limpiar
+            </button>
+          </div>
+
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -1216,7 +1289,7 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {visibleOrders.map((order) => (
                   <Fragment key={order.id}>
                     <tr>
                       <td>#{order.id}</td>
@@ -1398,12 +1471,22 @@ function Dashboard() {
               </div>
             </div>
 
-            <input
-              className="search-input"
-              value={productQuery}
-              onChange={(event) => setProductQuery(event.target.value)}
-              placeholder="Busca por nombre, categoria o marca"
-            />
+            <div className="filter-toolbar">
+              <input
+                className="search-input"
+                value={productQuery}
+                onChange={(event) => setProductQuery(event.target.value)}
+                placeholder="Busca por nombre, categoria o marca"
+              />
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => setProductQuery("")}
+                disabled={!productQuery}
+              >
+                Limpiar
+              </button>
+            </div>
 
             <div className="table-wrap">
               <table className="data-table">
@@ -1814,6 +1897,23 @@ function Dashboard() {
               </div>
             </div>
 
+            <div className="filter-toolbar">
+              <input
+                className="search-input"
+                value={userQuery}
+                onChange={(event) => setUserQuery(event.target.value)}
+                placeholder="Busca por nombre, correo, rol o estado"
+              />
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => setUserQuery("")}
+                disabled={!userQuery}
+              >
+                Limpiar
+              </button>
+            </div>
+
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
@@ -1825,7 +1925,7 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((item) => (
+                  {visibleUsers.map((item) => (
                     <tr key={item.id}>
                       <td>{item.nombre}</td>
                       <td>{item.rol}</td>
@@ -1878,8 +1978,25 @@ function Dashboard() {
               </div>
             </form>
 
+            <div className="filter-toolbar">
+              <input
+                className="search-input"
+                value={categoryQuery}
+                onChange={(event) => setCategoryQuery(event.target.value)}
+                placeholder="Busca categoria por nombre, descripcion o estado"
+              />
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => setCategoryQuery("")}
+                disabled={!categoryQuery}
+              >
+                Limpiar
+              </button>
+            </div>
+
             <ul className="activity-list">
-              {catalogos.categorias.map((item) => (
+              {visibleCategories.map((item) => (
                 <li key={item.id}>
                   <strong>{item.nombre}</strong>
                   <span>{item.activo ? "Activa" : "Inactiva"}</span>
@@ -1936,8 +2053,25 @@ function Dashboard() {
               </div>
             </form>
 
+            <div className="filter-toolbar">
+              <input
+                className="search-input"
+                value={brandQuery}
+                onChange={(event) => setBrandQuery(event.target.value)}
+                placeholder="Busca marca por nombre, descripcion o estado"
+              />
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => setBrandQuery("")}
+                disabled={!brandQuery}
+              >
+                Limpiar
+              </button>
+            </div>
+
             <ul className="activity-list">
-              {catalogos.marcas.map((item) => (
+              {visibleBrands.map((item) => (
                 <li key={item.id}>
                   <strong>{item.nombre}</strong>
                   <span>{item.activo ? "Activa" : "Inactiva"}</span>
@@ -1986,8 +2120,25 @@ function Dashboard() {
               </div>
             </form>
 
+            <div className="filter-toolbar">
+              <input
+                className="search-input"
+                value={providerQuery}
+                onChange={(event) => setProviderQuery(event.target.value)}
+                placeholder="Busca proveedor por nombre, NIT, correo o telefono"
+              />
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => setProviderQuery("")}
+                disabled={!providerQuery}
+              >
+                Limpiar
+              </button>
+            </div>
+
             <ul className="activity-list">
-              {catalogos.proveedores.map((item) => (
+              {visibleProviders.map((item) => (
                 <li key={item.id}>
                   <strong>{item.nombre}</strong>
                   <span>

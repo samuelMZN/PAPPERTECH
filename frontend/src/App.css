@@ -824,6 +824,32 @@ button {
   background: var(--surface-soft);
 }
 
+.dashboard-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+  background:
+    radial-gradient(circle at top right, rgba(110, 173, 255, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(40, 86, 145, 0.18), rgba(23, 46, 77, 0.92));
+}
+
+.dashboard-notice > div {
+  display: grid;
+  gap: 6px;
+}
+
+.dashboard-notice strong {
+  color: #f5fbff;
+  font-size: 1rem;
+}
+
+.dashboard-notice span {
+  color: var(--ink-soft);
+}
+
 .inventory-callout strong {
   color: var(--ink);
 }

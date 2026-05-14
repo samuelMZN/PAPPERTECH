@@ -189,11 +189,15 @@ exports.vaciarCarrito = async (req, res) => {
 };
 
 exports.checkout = async (req, res) => {
-  const { metodo = "efectivo" } = req.body;
+  const metodo = String(req.body.metodo || "efectivo").trim().toLowerCase();
   const estadoPagoInicial = "aprobado";
   const connection = await db.promise().getConnection();
 
   try {
+    if (metodo !== "efectivo") {
+      throw new Error("Por ahora solo aceptamos pagos en efectivo");
+    }
+
     await connection.beginTransaction();
 
     const [usuarios] = await connection.execute(

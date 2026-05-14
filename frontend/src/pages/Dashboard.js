@@ -667,6 +667,27 @@ function Dashboard() {
       {error ? <p className="message error">{error}</p> : null}
       {success ? <p className="message success">{success}</p> : null}
       {orderNotice ? <p className="message info">{orderNotice}</p> : null}
+      {pendingOrdersCount > 0 ? (
+        <article className="dashboard-notice panel">
+          <div>
+            <p className="catalog-section__eyebrow">Notificacion de pedidos</p>
+            <strong>
+              {pendingOrdersCount === 1
+                ? "Tienes 1 pedido nuevo o pendiente por revisar."
+                : `Tienes ${pendingOrdersCount} pedidos nuevos o pendientes por revisar.`}
+            </strong>
+            <span>Entra al modulo Pedidos para verlos y cambiar su estado.</span>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setActiveTab("pedidos")}
+          >
+            Ver pedidos
+          </button>
+        </article>
+      ) : null}
 
       <div className="dashboard-shell">
         <aside className="panel dashboard-sidebar">

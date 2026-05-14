@@ -322,10 +322,6 @@ function Cart() {
             onChange={(event) => setMetodo(event.target.value)}
           >
             <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="pse">PSE</option>
-            <option value="tarjeta_debito">Tarjeta debito</option>
-            <option value="tarjeta_credito">Tarjeta credito</option>
           </select>
 
           <div className="cart-summary__contact">

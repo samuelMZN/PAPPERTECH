@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -8,9 +8,11 @@ function Navbar() {
   const { isAuthenticated, user, logout, isAdministrator, isWorker, isClient } = useAuth();
   const { cartCount } = useCart();
   const { theme, isDark, toggleTheme } = useTheme();
+  const location = useLocation();
   const navigate = useNavigate();
   const brandLogo = `${process.env.PUBLIC_URL || ""}/logo-pappertech.png`;
   const headerRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const updateHeaderHeight = () => {
@@ -24,30 +26,63 @@ function Navbar() {
       );
     };
 
+    const handleResize = () => {
+      updateHeaderHeight();
+
+      if (window.innerWidth > 640) {
+        setMenuOpen(false);
+      }
+    };
+
     updateHeaderHeight();
-    window.addEventListener("resize", updateHeaderHeight);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", updateHeaderHeight);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
   const handleLogout = () => {
+    setMenuOpen(false);
     logout();
     navigate("/");
   };
 
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
-    <header className="topbar" ref={headerRef}>
-      <div className="brand-group">
-        <Link className="brand" to="/">
-          <img className="brand-logo" src={brandLogo} alt="PapperTech" />
-        </Link>
-        <p className="brand-copy">Papeleria, inventario y pedidos en un solo lugar.</p>
+    <header className={`topbar ${menuOpen ? "is-menu-open" : ""}`} ref={headerRef}>
+      <div className="topbar__main">
+        <div className="brand-group">
+          <Link className="brand" to="/" onClick={closeMenu}>
+            <img className="brand-logo" src={brandLogo} alt="PapperTech" />
+          </Link>
+          <p className="brand-copy">Papeleria, inventario y pedidos en un solo lugar.</p>
+        </div>
+
+        <button
+          className="topbar-menu-toggle"
+          type="button"
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? "Cerrar menu" : "Abrir menu"}
+          onClick={() => setMenuOpen((current) => !current)}
+        >
+          <span className="topbar-menu-toggle__line" />
+          <span className="topbar-menu-toggle__line" />
+          <span className="topbar-menu-toggle__line" />
+        </button>
       </div>
 
-      <nav className="topbar-links">
-        <Link to="/">Inicio</Link>
+      <nav className={`topbar-links ${menuOpen ? "is-open" : ""}`}>
+        <Link to="/" onClick={closeMenu}>
+          Inicio
+        </Link>
         <button className="theme-toggle" type="button" onClick={toggleTheme}>
           <span className="theme-toggle__icon">{isDark ? "L" : "D"}</span>
           <span>{theme === "dark" ? "Modo claro" : "Modo oscuro"}</span>
@@ -55,11 +90,23 @@ function Navbar() {
 
         {isAuthenticated ? (
           <>
-            {isAdministrator ? <Link to="/dashboard">Dashboard</Link> : null}
-            {isWorker ? <Link to="/panel">Operaciones</Link> : null}
-            {isClient ? <Link to="/panel">Mi cuenta</Link> : null}
+            {isAdministrator ? (
+              <Link to="/dashboard" onClick={closeMenu}>
+                Dashboard
+              </Link>
+            ) : null}
+            {isWorker ? (
+              <Link to="/panel" onClick={closeMenu}>
+                Operaciones
+              </Link>
+            ) : null}
             {isClient ? (
-              <Link className="cart-link" to="/carrito">
+              <Link to="/panel" onClick={closeMenu}>
+                Mi cuenta
+              </Link>
+            ) : null}
+            {isClient ? (
+              <Link className="cart-link" to="/carrito" onClick={closeMenu}>
                 <span>Carrito</span>
                 <span className="cart-count">{cartCount}</span>
               </Link>
@@ -73,8 +120,10 @@ function Navbar() {
           </>
         ) : (
           <>
-            <Link to="/login">Login</Link>
-            <Link className="btn btn-primary" to="/registro">
+            <Link to="/login" onClick={closeMenu}>
+              Login
+            </Link>
+            <Link className="btn btn-primary" to="/registro" onClick={closeMenu}>
               Crear cuenta
             </Link>
           </>

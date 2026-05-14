@@ -117,6 +117,15 @@ button {
   backdrop-filter: blur(18px);
 }
 
+.topbar__main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .brand-group {
   display: grid;
   gap: 4px;
@@ -171,6 +180,30 @@ button {
 .topbar-links button:hover {
   transform: translateY(-1px);
   background: var(--primary-soft);
+}
+
+.topbar-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--soft-shadow);
+}
+
+.topbar-menu-toggle__line {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .theme-toggle {
@@ -2116,6 +2149,7 @@ button {
   .topbar {
     padding: 14px 16px;
     gap: 16px;
+    align-items: stretch;
   }
 
   .brand-logo {
@@ -2132,11 +2166,46 @@ button {
     line-height: 1.5;
   }
 
+  .topbar__main {
+    width: 100%;
+  }
+
+  .topbar-menu-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+  }
+
+  .topbar.is-menu-open .topbar-menu-toggle__line:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .topbar.is-menu-open .topbar-menu-toggle__line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .topbar.is-menu-open .topbar-menu-toggle__line:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .topbar-menu-toggle__line {
+    transition: transform 0.18s ease, opacity 0.18s ease;
+  }
+
   .topbar-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: none;
     gap: 10px;
     width: 100%;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    box-shadow: var(--soft-shadow);
+  }
+
+  .topbar-links.is-open {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .topbar-links a,
@@ -2144,15 +2213,18 @@ button {
   .topbar-links .cart-link,
   .topbar-links .user-chip {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
+    min-height: 48px;
+    border-radius: 16px;
+    text-align: left;
   }
 
   .user-chip {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     min-height: 46px;
-    text-align: center;
+    text-align: left;
   }
 
   .layout {

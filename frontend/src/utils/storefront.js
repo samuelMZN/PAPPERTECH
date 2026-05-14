@@ -58,6 +58,24 @@ function hasAvailableStock(producto) {
   return Number(producto?.stock || 0) > 0;
 }
 
+export function normalizeStorefrontProducts(products, categories) {
+  const activeCategoryIds = new Set(categories.map((item) => Number(item.id)));
+
+  return products.map((producto) => {
+    const hasActiveCategory = activeCategoryIds.has(Number(producto?.categoria_id));
+
+    if (hasActiveCategory) {
+      return producto;
+    }
+
+    return {
+      ...producto,
+      categoria: "",
+      categoria_id: null
+    };
+  });
+}
+
 function encodeSvg(svg) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
@@ -327,7 +345,7 @@ export function buildCategoryShowcase(categories, products) {
       id: "sin-categoria",
       nombre: "Sin categoria",
       label: "Sin categoria",
-      descripcion: "Productos activos que aun no tienen una categoria formal.",
+      descripcion: "Productos activos que no tienen una categoria activa disponible.",
       total_productos: uncategorizedItems.length,
       items: uncategorizedItems,
       previewLabels: getCategoryPreviewKeywords(uncategorizedItems)

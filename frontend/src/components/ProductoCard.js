@@ -61,7 +61,7 @@ function ProductoCard({
         <h3 className="shop-card__title" title={producto.nombre}>
           {producto.nombre}
         </h3>
-        <p>{producto.marca || producto.categoria || "Papeleria creativa"}</p>
+        <p>{producto.marca || categoryLabel || "Papeleria creativa"}</p>
         <strong>{formatCurrency(producto.precio_venta)}</strong>
         {hasDiscount ? (
           <span className="shop-card__discount">

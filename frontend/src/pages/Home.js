@@ -5,7 +5,12 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useFavorites } from "../context/FavoritesContext";
 import { apiRequest } from "../services/api";
-import { buildCategoryShowcase, getCategoryIconSource, titleCase } from "../utils/storefront";
+import {
+  buildCategoryShowcase,
+  getCategoryIconSource,
+  normalizeStorefrontProducts,
+  titleCase
+} from "../utils/storefront";
 
 const NEW_PRODUCTS_WINDOW_DAYS = 15;
 
@@ -180,8 +185,10 @@ function Home() {
           return;
         }
 
-        setProductos(productsData);
-        setCategorias(catalogData.categorias || []);
+        const categoriasActivas = catalogData.categorias || [];
+
+        setCategorias(categoriasActivas);
+        setProductos(normalizeStorefrontProducts(productsData, categoriasActivas));
       } catch (requestError) {
         if (active) {
           setError(requestError.message);

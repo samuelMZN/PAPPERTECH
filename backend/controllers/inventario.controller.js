@@ -8,7 +8,8 @@ exports.movimiento = async (req, res) => {
     cantidad,
     motivo = "ajuste_manual",
     proveedor_id = null,
-    precio_compra_unitario = null
+    precio_compra_unitario = null,
+    factura = ""
   } = req.body;
 
   if (!producto_id || !tipo || !cantidad) {
@@ -38,7 +39,7 @@ exports.movimiento = async (req, res) => {
 
     const [productos] = await connection.execute(
       `
-        SELECT id, nombre, stock_actual, precio_mayor
+        SELECT id, nombre, stock_actual, precio_mayor, precio_detal
         FROM productos
         WHERE id = ?
       `,
@@ -60,8 +61,17 @@ exports.movimiento = async (req, res) => {
     const [insertResult] = await connection.execute(
       `
         INSERT INTO movimientos_inventario
-          (producto_id, cantidad, tipo, motivo, proveedor_id, usuario_id, precio_unitario_referencia)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (
+            producto_id,
+            cantidad,
+            tipo,
+            motivo,
+            proveedor_id,
+            factura_referencia,
+            usuario_id,
+            precio_unitario_referencia
+          )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         producto_id,
@@ -69,12 +79,14 @@ exports.movimiento = async (req, res) => {
         tipo,
         motivo,
         proveedor_id || null,
+        String(factura || "").trim() || null,
         req.user.id,
         tipo === "entrada" && precioCompraUnitario > 0 ? precioCompraUnitario : null
       ]
     );
 
     let nuevoCostoPromedio = null;
+    let precioVentaAsignado = null;
     let proveedorNombre = null;
 
     if (tipo === "entrada" && precioCompraUnitario > 0) {
@@ -87,9 +99,21 @@ exports.movimiento = async (req, res) => {
             (stockAnterior + cantidadNormalizada)
           : precioCompraUnitario;
 
+      const averageCostRounded = Number(nuevoCostoPromedio.toFixed(2));
+      const updates = ["precio_mayor = ?"];
+      const updateValues = [averageCostRounded];
+
+      if (Number(productos[0].precio_detal || 0) <= 0) {
+        precioVentaAsignado = averageCostRounded;
+        updates.push("precio_detal = ?");
+        updateValues.push(precioVentaAsignado);
+      }
+
+      updateValues.push(producto_id);
+
       await connection.execute(
-        "UPDATE productos SET precio_mayor = ? WHERE id = ?",
-        [Number(nuevoCostoPromedio.toFixed(2)), producto_id]
+        `UPDATE productos SET ${updates.join(", ")} WHERE id = ?`,
+        updateValues
       );
     }
 
@@ -114,10 +138,12 @@ exports.movimiento = async (req, res) => {
         tipo,
         motivo,
         proveedor_id: proveedor_id || null,
+        factura_referencia: String(factura || "").trim() || null,
         precio_compra_unitario: precioCompraUnitario || null,
         precio_compra_promedio: nuevoCostoPromedio
           ? Number(nuevoCostoPromedio.toFixed(2))
-          : null
+          : null,
+        precio_venta_asignado: precioVentaAsignado
       },
       ipAddress: req.ip
     });
@@ -139,6 +165,7 @@ exports.movimiento = async (req, res) => {
         movimiento: tipo,
         motivo,
         proveedor: proveedorNombre,
+        factura: String(factura || "").trim() || null,
         costo_unitario: tipo === "entrada" && precioCompraUnitario > 0 ? precioCompraUnitario : null,
         costo_promedio: nuevoCostoPromedio ? Number(nuevoCostoPromedio.toFixed(2)) : null,
         total:
@@ -180,6 +207,26 @@ exports.getMovimientos = async (req, res) => {
       values.push(Number(req.query.pedido_id));
     }
 
+    if (req.query.proveedor_id) {
+      filters.push("i.proveedor_id = ?");
+      values.push(Number(req.query.proveedor_id));
+    }
+
+    if (req.query.factura) {
+      filters.push("i.factura_referencia LIKE ?");
+      values.push(`%${String(req.query.factura).trim()}%`);
+    }
+
+    if (req.query.fecha_desde) {
+      filters.push("DATE(i.creado_en) >= ?");
+      values.push(req.query.fecha_desde);
+    }
+
+    if (req.query.fecha_hasta) {
+      filters.push("DATE(i.creado_en) <= ?");
+      values.push(req.query.fecha_hasta);
+    }
+
     const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
 
     const [result] = await db.promise().execute(`
@@ -190,6 +237,7 @@ exports.getMovimientos = async (req, res) => {
         ABS(i.cantidad) AS cantidad_absoluta,
         i.motivo,
         i.proveedor_id,
+        i.factura_referencia,
         i.pedido_id,
         i.stock_antes,
         i.stock_despues,
@@ -209,6 +257,146 @@ exports.getMovimientos = async (req, res) => {
     return res.json(result);
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener movimientos", error: error.message });
+  }
+};
+
+exports.getReporteCompras = async (req, res) => {
+  try {
+    const filters = [
+      "i.tipo = 'entrada'",
+      "i.motivo = 'compra_proveedor'"
+    ];
+    const values = [];
+
+    if (req.query.producto_id) {
+      filters.push("i.producto_id = ?");
+      values.push(Number(req.query.producto_id));
+    }
+
+    if (req.query.proveedor_id) {
+      filters.push("i.proveedor_id = ?");
+      values.push(Number(req.query.proveedor_id));
+    }
+
+    if (req.query.factura) {
+      filters.push("COALESCE(i.factura_referencia, '') LIKE ?");
+      values.push(`%${String(req.query.factura).trim()}%`);
+    }
+
+    if (req.query.fecha_desde) {
+      filters.push("DATE(i.creado_en) >= ?");
+      values.push(req.query.fecha_desde);
+    }
+
+    if (req.query.fecha_hasta) {
+      filters.push("DATE(i.creado_en) <= ?");
+      values.push(req.query.fecha_hasta);
+    }
+
+    const whereClause = `WHERE ${filters.join(" AND ")}`;
+
+    const [comprasRows, resumenRows, porProductoRows, porFacturaRows] = await Promise.all([
+      db.promise().execute(
+        `
+          SELECT
+            i.id,
+            i.creado_en AS fecha,
+            i.factura_referencia,
+            i.producto_id,
+            p.nombre AS producto,
+            i.proveedor_id,
+            pr.nombre AS proveedor,
+            ABS(i.cantidad) AS cantidad,
+            COALESCE(i.precio_unitario_referencia, p.precio_mayor, 0) AS costo_unitario,
+            ABS(i.cantidad) * COALESCE(i.precio_unitario_referencia, p.precio_mayor, 0) AS total_compra,
+            u.nombre AS registrado_por
+          FROM movimientos_inventario i
+          JOIN productos p ON p.id = i.producto_id
+          LEFT JOIN proveedores pr ON pr.id = i.proveedor_id
+          JOIN usuarios u ON u.id = i.usuario_id
+          ${whereClause}
+          ORDER BY i.creado_en DESC, i.id DESC
+        `,
+        values
+      ),
+      db.promise().execute(
+        `
+          SELECT
+            COUNT(*) AS total_registros,
+            COALESCE(SUM(ABS(i.cantidad)), 0) AS total_unidades,
+            COALESCE(
+              SUM(ABS(i.cantidad) * COALESCE(i.precio_unitario_referencia, p.precio_mayor, 0)),
+              0
+            ) AS total_invertido,
+            COUNT(DISTINCT NULLIF(COALESCE(i.factura_referencia, ''), '')) AS total_facturas
+          FROM movimientos_inventario i
+          JOIN productos p ON p.id = i.producto_id
+          ${whereClause}
+        `,
+        values
+      ),
+      db.promise().execute(
+        `
+          SELECT
+            i.producto_id,
+            p.nombre AS producto,
+            COUNT(*) AS compras_registradas,
+            COALESCE(SUM(ABS(i.cantidad)), 0) AS unidades,
+            COALESCE(
+              SUM(ABS(i.cantidad) * COALESCE(i.precio_unitario_referencia, p.precio_mayor, 0)),
+              0
+            ) AS total_invertido
+          FROM movimientos_inventario i
+          JOIN productos p ON p.id = i.producto_id
+          ${whereClause}
+          GROUP BY i.producto_id, p.nombre
+          ORDER BY total_invertido DESC, unidades DESC, producto ASC
+        `,
+        values
+      ),
+      db.promise().execute(
+        `
+          SELECT
+            COALESCE(NULLIF(i.factura_referencia, ''), 'Sin factura') AS factura,
+            COUNT(*) AS movimientos,
+            COALESCE(SUM(ABS(i.cantidad)), 0) AS unidades,
+            COALESCE(
+              SUM(ABS(i.cantidad) * COALESCE(i.precio_unitario_referencia, p.precio_mayor, 0)),
+              0
+            ) AS total_invertido
+          FROM movimientos_inventario i
+          JOIN productos p ON p.id = i.producto_id
+          ${whereClause}
+          GROUP BY COALESCE(NULLIF(i.factura_referencia, ''), 'Sin factura')
+          ORDER BY MAX(i.creado_en) DESC, factura ASC
+        `,
+        values
+      )
+    ]);
+
+    return res.json({
+      filtros: {
+        fecha_desde: req.query.fecha_desde || "",
+        fecha_hasta: req.query.fecha_hasta || "",
+        producto_id: req.query.producto_id ? Number(req.query.producto_id) : null,
+        proveedor_id: req.query.proveedor_id ? Number(req.query.proveedor_id) : null,
+        factura: req.query.factura || ""
+      },
+      resumen: resumenRows[0][0] || {
+        total_registros: 0,
+        total_unidades: 0,
+        total_invertido: 0,
+        total_facturas: 0
+      },
+      compras: comprasRows[0],
+      por_producto: porProductoRows[0],
+      por_factura: porFacturaRows[0]
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error al generar el reporte de compras",
+      error: error.message
+    });
   }
 };
 

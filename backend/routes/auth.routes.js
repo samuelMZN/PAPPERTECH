@@ -7,6 +7,7 @@ const clientOnly = authMiddleware.allowRoles("cliente");
 
 router.post("/register", authController.register);
 router.post("/login", authController.login);
+router.get("/verify-email", authController.verifyEmail);
 router.get("/perfil", authMiddleware, authController.perfil);
 router.put("/perfil", authMiddleware, clientOnly, authController.actualizarPerfil);
 

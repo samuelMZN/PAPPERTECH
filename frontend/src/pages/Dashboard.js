@@ -24,6 +24,18 @@ function formatPercent(value) {
   return `${Number(value || 0).toFixed(1)}%`;
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Date(value).toLocaleString("es-CO");
+}
+
+function formatCatalogPrice(value) {
+  return Number(value || 0) > 0 ? formatCurrency(value) : "Se calcula con la compra";
+}
+
 function getOrderActions(estado) {
   if (estado === "pendiente") {
     return [
@@ -86,7 +98,15 @@ const initialPurchaseForm = {
   proveedor_id: "",
   cantidad: "1",
   precio_compra_unitario: "",
+  factura: "",
   motivo: "compra_proveedor"
+};
+
+const initialPurchaseFilters = {
+  fecha_desde: "",
+  fecha_hasta: "",
+  producto_id: "",
+  factura: ""
 };
 
 const initialCategoryForm = {
@@ -112,7 +132,30 @@ const initialProviderForm = {
   direccion: ""
 };
 
-async function fetchDashboardData(token) {
+function buildPurchaseReportPath(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.fecha_desde) {
+    params.set("fecha_desde", filters.fecha_desde);
+  }
+
+  if (filters.fecha_hasta) {
+    params.set("fecha_hasta", filters.fecha_hasta);
+  }
+
+  if (filters.producto_id) {
+    params.set("producto_id", filters.producto_id);
+  }
+
+  if (filters.factura) {
+    params.set("factura", filters.factura);
+  }
+
+  const query = params.toString();
+  return query ? `/inventario/reportes/compras?${query}` : "/inventario/reportes/compras";
+}
+
+async function fetchDashboardData(token, purchaseFilters) {
   return Promise.all([
     apiRequest("/auth/perfil", { token }),
     apiRequest("/dashboard/admin", { token }),
@@ -120,7 +163,8 @@ async function fetchDashboardData(token) {
     apiRequest("/usuarios", { token }),
     apiRequest("/catalogos", { token }),
     apiRequest("/pedidos", { token }),
-    apiRequest("/inventario", { token })
+    apiRequest("/inventario", { token }),
+    apiRequest(buildPurchaseReportPath(purchaseFilters), { token })
   ]);
 }
 
@@ -146,10 +190,22 @@ function Dashboard() {
   const [userForm, setUserForm] = useState(initialUserForm);
   const [productForm, setProductForm] = useState(initialProductForm);
   const [purchaseForm, setPurchaseForm] = useState(initialPurchaseForm);
+  const [purchaseFilters, setPurchaseFilters] = useState(initialPurchaseFilters);
   const [categoryForm, setCategoryForm] = useState(initialCategoryForm);
   const [brandForm, setBrandForm] = useState(initialBrandForm);
   const [providerForm, setProviderForm] = useState(initialProviderForm);
   const [lastPurchaseTicket, setLastPurchaseTicket] = useState(null);
+  const [purchaseReport, setPurchaseReport] = useState({
+    resumen: {
+      total_registros: 0,
+      total_unidades: 0,
+      total_invertido: 0,
+      total_facturas: 0
+    },
+    compras: [],
+    por_producto: [],
+    por_factura: []
+  });
   const [orderNotice, setOrderNotice] = useState("");
   const knownPendingOrdersRef = useRef(new Set());
 
@@ -160,8 +216,16 @@ function Dashboard() {
     setError("");
 
     try {
-      const [profileData, summaryData, productsData, usersData, catalogosData, ordersData, movementsData] =
-        await fetchDashboardData(token);
+      const [
+        profileData,
+        summaryData,
+        productsData,
+        usersData,
+        catalogosData,
+        ordersData,
+        movementsData,
+        purchaseReportData
+      ] = await fetchDashboardData(token, purchaseFilters);
 
       setProfile(profileData);
       setSummary(summaryData);
@@ -171,6 +235,7 @@ function Dashboard() {
       const { notice } = detectNewPendingOrders(ordersData, knownPendingOrdersRef);
       setOrders(ordersData);
       setMovements(movementsData);
+      setPurchaseReport(purchaseReportData);
 
       if (notice) {
         setOrderNotice(notice);
@@ -183,7 +248,7 @@ function Dashboard() {
         setLoading(false);
       }
     }
-  }, [token]);
+  }, [purchaseFilters, token]);
 
   useEffect(() => {
     loadData();
@@ -316,6 +381,32 @@ function Dashboard() {
     () => orders.filter((order) => order.estado === "pendiente").length,
     [orders]
   );
+  const purchaseReportCards = useMemo(() => {
+    const resumen = purchaseReport?.resumen || {};
+
+    return [
+      {
+        id: "registros",
+        label: "Compras registradas",
+        value: Number(resumen.total_registros || 0)
+      },
+      {
+        id: "unidades",
+        label: "Unidades compradas",
+        value: Number(resumen.total_unidades || 0)
+      },
+      {
+        id: "invertido",
+        label: "Total invertido",
+        value: formatCurrency(resumen.total_invertido || 0)
+      },
+      {
+        id: "facturas",
+        label: "Facturas encontradas",
+        value: Number(resumen.total_facturas || 0)
+      }
+    ];
+  }, [purchaseReport]);
   const printableOrderTickets = useMemo(
     () =>
       orders
@@ -371,6 +462,11 @@ function Dashboard() {
   const handlePurchaseChange = (event) => {
     const { name, value } = event.target;
     setPurchaseForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handlePurchaseFilterChange = (event) => {
+    const { name, value } = event.target;
+    setPurchaseFilters((current) => ({ ...current, [name]: value }));
   };
 
   const resetMessages = () => {
@@ -503,6 +599,7 @@ function Dashboard() {
           cantidad: Number(purchaseForm.cantidad),
           motivo: purchaseForm.motivo || "compra_proveedor",
           proveedor_id: purchaseForm.proveedor_id ? Number(purchaseForm.proveedor_id) : null,
+          factura: purchaseForm.factura || "",
           precio_compra_unitario: purchaseForm.precio_compra_unitario
             ? Number(purchaseForm.precio_compra_unitario)
             : null
@@ -516,6 +613,10 @@ function Dashboard() {
     } catch (requestError) {
       setError(requestError.message);
     }
+  };
+
+  const clearPurchaseFilters = () => {
+    setPurchaseFilters(initialPurchaseFilters);
   };
 
   const deleteProduct = async (item, mode = "deactivate") => {
@@ -1128,8 +1229,8 @@ function Dashboard() {
                 <strong>{productForm.id ? "Editando producto" : "Creando producto"}</strong>
                 <span>
                   {productForm.id
-                    ? "Puedes cambiar nombre, categoria, proveedor, precio detal, descuentos e imagen sin tocar el stock directo."
-                    : "El producto se crea sin stock manual. La existencia real aparece cuando registras compras al proveedor."}
+                    ? "Puedes cambiar nombre, categoria, proveedor, precio de venta, descuentos e imagen sin tocar el stock directo."
+                    : "El producto se crea sin stock manual y puede quedar sin precio inicial. La existencia y el valor aparecen cuando registras compras al proveedor."}
                 </span>
               </div>
               <div>
@@ -1181,11 +1282,11 @@ function Dashboard() {
               <input
                 name="precio_venta"
                 type="number"
-                min="1"
+                min="0"
+                step="0.01"
                 value={productForm.precio_venta}
                 onChange={handleProductChange}
-                placeholder="Precio detal"
-                required
+                placeholder="Precio de venta opcional"
               />
 
               <input
@@ -1271,7 +1372,7 @@ function Dashboard() {
                     <tr key={item.id}>
                       <td>{item.nombre}</td>
                       <td>{item.categoria || "-"}</td>
-                      <td>{formatCurrency(item.precio_venta)}</td>
+                      <td>{formatCatalogPrice(item.precio_venta)}</td>
                       <td>{item.proveedor || "-"}</td>
                       <td>
                         {item.descuento_cantidad_minima && item.descuento_porcentaje
@@ -1375,6 +1476,13 @@ function Dashboard() {
                 placeholder="Costo unitario"
               />
 
+              <input
+                name="factura"
+                value={purchaseForm.factura}
+                onChange={handlePurchaseChange}
+                placeholder="Factura o referencia de compra"
+              />
+
               <button className="btn btn-secondary" type="submit">
                 Registrar compra
               </button>
@@ -1390,9 +1498,169 @@ function Dashboard() {
           <article className="panel">
             <div className="panel-header">
               <div>
-                <h2>Compras recientes</h2>
-                <p>Tirilla visible de cada entrada comprada a proveedor.</p>
+                <h2>Informe de compras</h2>
+                <p>Consulta compras por fecha, producto y factura con reportes especificos.</p>
               </div>
+            </div>
+
+            <form className="form-grid" onSubmit={(event) => event.preventDefault()}>
+              <input
+                name="fecha_desde"
+                type="date"
+                value={purchaseFilters.fecha_desde}
+                onChange={handlePurchaseFilterChange}
+                placeholder="Desde"
+              />
+              <input
+                name="fecha_hasta"
+                type="date"
+                value={purchaseFilters.fecha_hasta}
+                onChange={handlePurchaseFilterChange}
+                placeholder="Hasta"
+              />
+              <select
+                name="producto_id"
+                value={purchaseFilters.producto_id}
+                onChange={handlePurchaseFilterChange}
+              >
+                <option value="">Todos los productos</option>
+                {products.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre}
+                  </option>
+                ))}
+              </select>
+              <input
+                name="factura"
+                value={purchaseFilters.factura}
+                onChange={handlePurchaseFilterChange}
+                placeholder="Buscar por factura"
+              />
+              <button className="btn btn-outline" type="button" onClick={clearPurchaseFilters}>
+                Limpiar filtros
+              </button>
+            </form>
+
+            <div className="stats-grid">
+              {purchaseReportCards.map((card) => (
+                <article key={card.id} className="stat-card">
+                  <strong>{card.value}</strong>
+                  <span>{card.label}</span>
+                </article>
+              ))}
+            </div>
+
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Factura</th>
+                    <th>Producto</th>
+                    <th>Proveedor</th>
+                    <th>Cantidad</th>
+                    <th>Costo unitario</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchaseReport.compras.length > 0 ? (
+                    purchaseReport.compras.map((item) => (
+                      <tr key={item.id}>
+                        <td>{formatDateTime(item.fecha)}</td>
+                        <td>{item.factura_referencia || "Sin factura"}</td>
+                        <td>{item.producto}</td>
+                        <td>{item.proveedor || "-"}</td>
+                        <td>{item.cantidad}</td>
+                        <td>{formatCurrency(item.costo_unitario)}</td>
+                        <td>{formatCurrency(item.total_compra)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7">No hay compras que coincidan con los filtros actuales.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="dashboard-grid">
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Reporte por producto</h2>
+                    <p>Cuanto se ha comprado por cada producto filtrado.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Movimientos</th>
+                        <th>Unidades</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchaseReport.por_producto.length > 0 ? (
+                        purchaseReport.por_producto.map((item) => (
+                          <tr key={item.producto_id}>
+                            <td>{item.producto}</td>
+                            <td>{item.compras_registradas}</td>
+                            <td>{item.unidades}</td>
+                            <td>{formatCurrency(item.total_invertido)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4">No hay resumen por producto para estos filtros.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Reporte por factura</h2>
+                    <p>Agrupa compras por referencia o numero de factura.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Factura</th>
+                        <th>Movimientos</th>
+                        <th>Unidades</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchaseReport.por_factura.length > 0 ? (
+                        purchaseReport.por_factura.map((item) => (
+                          <tr key={item.factura}>
+                            <td>{item.factura}</td>
+                            <td>{item.movimientos}</td>
+                            <td>{item.unidades}</td>
+                            <td>{formatCurrency(item.total_invertido)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4">No hay resumen por factura para estos filtros.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
             </div>
 
             <div className="ticket-list">
@@ -1413,6 +1681,7 @@ function Dashboard() {
                       movimiento: movement.tipo,
                       motivo: movement.motivo,
                       proveedor: movement.proveedor,
+                      factura: movement.factura_referencia,
                       costo_unitario: movement.precio_unitario_referencia,
                       total: Number(movement.precio_unitario_referencia || 0) * Number(movement.cantidad_absoluta || 0),
                       stock_antes: movement.stock_antes,

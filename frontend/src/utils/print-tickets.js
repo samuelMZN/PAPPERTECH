@@ -48,6 +48,7 @@ function renderMetaChips(ticket) {
     renderDate(ticket.fecha),
     ticket.cliente,
     ticket.proveedor,
+    ticket.factura ? `Factura ${ticket.factura}` : null,
     ticket.telefono,
     ticket.direccion
   ].filter(Boolean);
@@ -88,6 +89,11 @@ function renderItems(ticket) {
       <div><span>Cantidad</span><strong>${escapeHtml(ticket.cantidad || 0)}</strong></div>
       <div><span>Movimiento</span><strong>${escapeHtml(ticket.movimiento || "-")}</strong></div>
       <div><span>Motivo</span><strong>${escapeHtml(ticket.motivo || "-")}</strong></div>
+      ${
+        ticket.factura
+          ? `<div><span>Factura</span><strong>${escapeHtml(ticket.factura)}</strong></div>`
+          : ""
+      }
       ${
         ticket.costo_unitario !== null && ticket.costo_unitario !== undefined
           ? `<div><span>Costo unitario</span><strong>${escapeHtml(
@@ -137,6 +143,10 @@ function renderFooter(ticket) {
 
   if (ticket.motivo) {
     meta.push(`Motivo: ${ticket.motivo}`);
+  }
+
+  if (ticket.factura) {
+    meta.push(`Factura: ${ticket.factura}`);
   }
 
   return `

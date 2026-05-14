@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Register() {
   const { register } = useAuth();
-  const navigate = useNavigate();
   const [form, setForm] = useState({ nombre: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [verificationPreviewUrl, setVerificationPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
@@ -19,12 +19,17 @@ function Register() {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setVerificationPreviewUrl("");
     setLoading(true);
 
     try {
-      await register(form.nombre, form.email, form.password);
-      setSuccess("Cuenta creada correctamente. Ya puedes iniciar sesion.");
-      setTimeout(() => navigate("/login"), 1000);
+      const response = await register(form.nombre, form.email, form.password);
+      setSuccess(
+        response.message ||
+          "Cuenta creada correctamente. Revisa tu correo para verificarla antes de iniciar sesion."
+      );
+      setVerificationPreviewUrl(response.verification_preview_url || "");
+      setForm({ nombre: "", email: "", password: "" });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -73,6 +78,12 @@ function Register() {
 
         {error ? <p className="message error">{error}</p> : null}
         {success ? <p className="message success">{success}</p> : null}
+        {verificationPreviewUrl ? (
+          <p className="message info">
+            Enlace temporal de verificacion:{" "}
+            <a href={verificationPreviewUrl}>{verificationPreviewUrl}</a>
+          </p>
+        ) : null}
 
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
           {loading ? "Registrando..." : "Crear cuenta"}

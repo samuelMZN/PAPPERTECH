@@ -1,8 +1,10 @@
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../middleware/auth");
 const { logAudit } = require("../utils/audit");
+const { buildVerificationUrl, sendVerificationEmail } = require("../utils/mailer");
 
 function sanitizeUser(user) {
   const normalizedRole = authMiddleware.normalizeRole(user.rol || user.rol_id);
@@ -15,8 +17,13 @@ function sanitizeUser(user) {
     rol_id: normalizedRole,
     telefono: user.telefono || "",
     direccion: user.direccion || "",
-    activo: Number(user.activo ?? 1)
+    activo: Number(user.activo ?? 1),
+    email_verificado: Number(user.email_verificado ?? 1)
   };
+}
+
+function createVerificationToken() {
+  return crypto.randomBytes(32).toString("hex");
 }
 
 exports.register = async (req, res) => {
@@ -39,16 +46,51 @@ exports.register = async (req, res) => {
     }
 
     const hash = bcrypt.hashSync(password, 10);
+    const verificationToken = createVerificationToken();
+    const verificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await db.promise().execute(
       `
-        INSERT INTO usuarios (nombre, email, password_hash, rol, activo)
-        VALUES (?, ?, ?, 'cliente', 1)
+        INSERT INTO usuarios
+          (
+            nombre,
+            email,
+            password_hash,
+            rol,
+            activo,
+            email_verificado,
+            email_verificacion_token,
+            email_verificacion_expira
+          )
+        VALUES (?, ?, ?, 'cliente', 1, 0, ?, ?)
       `,
-      [nombre, email, hash]
+      [nombre, email, hash, verificationToken, verificationExpiresAt]
     );
 
-    return res.status(201).json({ message: "Usuario registrado correctamente" });
+    let delivery;
+
+    try {
+      delivery = await sendVerificationEmail({
+        email,
+        nombre,
+        token: verificationToken
+      });
+    } catch (mailError) {
+      console.error("No se pudo enviar el correo de verificacion:", mailError.message);
+      delivery = {
+        delivered: false,
+        preview_url: buildVerificationUrl(verificationToken)
+      };
+    }
+
+    return res.status(201).json({
+      message: delivery.delivered
+        ? "Cuenta creada. Revisa tu correo para verificarla antes de iniciar sesion."
+        : "Cuenta creada. Como el correo automatico no esta configurado, usa el enlace de verificacion temporal.",
+      verification_required: true,
+      verification_email_sent: delivery.delivered,
+      verification_preview_url: delivery.preview_url || null
+    });
   } catch (error) {
     return res.status(500).json({ message: "Error al registrar usuario", error: error.message });
   }
@@ -65,7 +107,16 @@ exports.login = async (req, res) => {
   try {
     const [result] = await db.promise().execute(
       `
-        SELECT id, nombre, email, password_hash, rol, telefono, direccion, activo
+        SELECT
+          id,
+          nombre,
+          email,
+          password_hash,
+          rol,
+          telefono,
+          direccion,
+          activo,
+          email_verificado
         FROM usuarios
         WHERE email = ?
       `,
@@ -82,6 +133,12 @@ exports.login = async (req, res) => {
 
     if (!Number(user.activo)) {
       return res.status(403).json({ message: "Tu cuenta esta desactivada" });
+    }
+
+    if (!Number(user.email_verificado ?? 1)) {
+      return res.status(403).json({
+        message: "Debes verificar tu correo antes de iniciar sesion"
+      });
     }
 
     if (!valid) {
@@ -112,7 +169,16 @@ exports.perfil = async (req, res) => {
   try {
     const [result] = await db.promise().execute(
       `
-        SELECT id, nombre, email, rol, rol AS rol_id, telefono, direccion, activo
+        SELECT
+          id,
+          nombre,
+          email,
+          rol,
+          rol AS rol_id,
+          telefono,
+          direccion,
+          activo,
+          email_verificado
         FROM usuarios
         WHERE id = ?
       `,
@@ -135,7 +201,7 @@ exports.actualizarPerfil = async (req, res) => {
   try {
     const [rows] = await connection.execute(
       `
-        SELECT id, nombre, email, rol, telefono, direccion, activo
+        SELECT id, nombre, email, rol, telefono, direccion, activo, email_verificado
         FROM usuarios
         WHERE id = ?
         LIMIT 1
@@ -198,7 +264,16 @@ exports.actualizarPerfil = async (req, res) => {
 
     const [updatedRows] = await connection.execute(
       `
-        SELECT id, nombre, email, rol, rol AS rol_id, telefono, direccion, activo
+        SELECT
+          id,
+          nombre,
+          email,
+          rol,
+          rol AS rol_id,
+          telefono,
+          direccion,
+          activo,
+          email_verificado
         FROM usuarios
         WHERE id = ?
       `,
@@ -211,6 +286,92 @@ exports.actualizarPerfil = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: "Error al actualizar perfil", error: error.message });
+  } finally {
+    connection.release();
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  const token = String(req.query.token || "").trim();
+
+  if (!token) {
+    return res.status(400).json({ message: "El enlace de verificacion es invalido" });
+  }
+
+  const connection = await db.promise().getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.execute(
+      `
+        SELECT
+          id,
+          nombre,
+          email,
+          email_verificado,
+          email_verificacion_expira
+        FROM usuarios
+        WHERE email_verificacion_token = ?
+        LIMIT 1
+      `,
+      [token]
+    );
+
+    if (rows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "El enlace de verificacion ya no es valido" });
+    }
+
+    const user = rows[0];
+
+    if (Number(user.email_verificado)) {
+      await connection.rollback();
+      return res.json({ message: "Tu correo ya estaba verificado" });
+    }
+
+    if (
+      user.email_verificacion_expira &&
+      new Date(user.email_verificacion_expira).getTime() < Date.now()
+    ) {
+      await connection.rollback();
+      return res.status(400).json({ message: "El enlace de verificacion ya expiro" });
+    }
+
+    await connection.execute(
+      `
+        UPDATE usuarios
+        SET email_verificado = 1,
+            email_verificacion_token = NULL,
+            email_verificacion_expira = NULL
+        WHERE id = ?
+      `,
+      [user.id]
+    );
+
+    await logAudit(connection, {
+      usuarioId: user.id,
+      accion: "verificar_correo",
+      tabla: "usuarios",
+      registroId: user.id,
+      valoresNuevos: {
+        email: user.email,
+        email_verificado: 1
+      },
+      ipAddress: req.ip
+    });
+
+    await connection.commit();
+
+    return res.json({
+      message: "Correo verificado correctamente. Ya puedes iniciar sesion."
+    });
+  } catch (error) {
+    await connection.rollback();
+    return res.status(500).json({
+      message: "Error al verificar el correo",
+      error: error.message
+    });
   } finally {
     connection.release();
   }

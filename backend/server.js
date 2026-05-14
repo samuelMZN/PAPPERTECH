@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const { ensureRuntimeSchema } = require("./utils/runtime-schema");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -30,9 +31,18 @@ app.use("/api/inventario", require("./routes/inventario.routes"));
 app.use("/api/pedidos", require("./routes/pedidos.routes"));
 app.use("/api/usuarios", require("./routes/usuarios.routes"));
 
-if (require.main === module) {
+async function startServer() {
+  await ensureRuntimeSchema();
+
   app.listen(PORT, () => {
     console.log(`Servidor en puerto ${PORT}`);
+  });
+}
+
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error("No se pudo iniciar el servidor:", error.message);
+    process.exit(1);
   });
 }
 

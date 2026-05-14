@@ -133,8 +133,15 @@ exports.crearProducto = async (req, res) => {
     imagen_url = ""
   } = req.body;
 
-  if (!nombre || Number(precio_venta) <= 0) {
-    return res.status(400).json({ message: "Nombre y precio de venta validos son obligatorios" });
+  if (!nombre) {
+    return res.status(400).json({ message: "El nombre del producto es obligatorio" });
+  }
+
+  if (
+    (hasValue(precio_venta) && Number(precio_venta) < 0) ||
+    (hasValue(precio_compra) && Number(precio_compra) < 0)
+  ) {
+    return res.status(400).json({ message: "Los precios no pueden ser negativos" });
   }
 
   try {
@@ -144,10 +151,12 @@ exports.crearProducto = async (req, res) => {
     try {
       await connection.beginTransaction();
 
-      const precioVentaFinal = Number(precio_venta);
+      const precioVentaFinal = hasValue(precio_venta) ? Number(precio_venta) : 0;
       const precioCompraFinal = hasValue(precio_compra)
         ? Number(precio_compra)
-        : precioVentaFinal;
+        : precioVentaFinal > 0
+          ? precioVentaFinal
+          : 0;
 
       const [resultado] = await connection.execute(
         `
@@ -243,8 +252,15 @@ exports.actualizarProducto = async (req, res) => {
     imagen_url = ""
   } = req.body;
 
-  if (!nombre || Number(precio_venta) <= 0) {
-    return res.status(400).json({ message: "Nombre y precio de venta validos son obligatorios" });
+  if (!nombre) {
+    return res.status(400).json({ message: "El nombre del producto es obligatorio" });
+  }
+
+  if (
+    (hasValue(precio_venta) && Number(precio_venta) < 0) ||
+    (hasValue(precio_compra) && Number(precio_compra) < 0)
+  ) {
+    return res.status(400).json({ message: "Los precios no pueden ser negativos" });
   }
 
   try {
@@ -267,10 +283,12 @@ exports.actualizarProducto = async (req, res) => {
       const ajuste = Number(ajuste_stock || 0);
       const stockActual = Number(existingRows[0].stock || 0);
       const costoAnterior = Number(existingRows[0].precio_compra || 0);
-      const precioVentaFinal = Number(precio_venta);
+      const precioVentaFinal = hasValue(precio_venta)
+        ? Number(precio_venta)
+        : Number(existingRows[0].precio_venta || 0);
       const precioCompraIngresado = hasValue(precio_compra)
         ? Number(precio_compra)
-        : costoAnterior || precioVentaFinal;
+        : costoAnterior || precioVentaFinal || 0;
       let precioCompraFinal = precioCompraIngresado;
 
       if (ajuste > 0 && precioCompraIngresado > 0 && stockActual > 0) {

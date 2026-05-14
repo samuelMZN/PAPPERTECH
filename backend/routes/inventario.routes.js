@@ -6,6 +6,7 @@ const router = express.Router();
 const staffOnly = authMiddleware.allowRoles("administrador", "trabajador");
 
 router.get("/", authMiddleware, staffOnly, inventarioController.getMovimientos);
+router.get("/reportes/compras", authMiddleware, staffOnly, inventarioController.getReporteCompras);
 router.get("/stock", authMiddleware, staffOnly, inventarioController.getStock);
 router.get("/low-stock", authMiddleware, staffOnly, inventarioController.getLowStock);
 router.post("/", authMiddleware, staffOnly, inventarioController.movimiento);

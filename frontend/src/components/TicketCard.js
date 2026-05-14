@@ -66,6 +66,7 @@ function TicketCard({ title, ticket, compact = false, showPrint = true, onPrint 
         <span className="ticket-chip">{renderDate(ticket.fecha)}</span>
         {ticket.cliente ? <span className="ticket-chip">{ticket.cliente}</span> : null}
         {ticket.proveedor ? <span className="ticket-chip">{ticket.proveedor}</span> : null}
+        {ticket.factura ? <span className="ticket-chip">Factura {ticket.factura}</span> : null}
         {ticket.pedido_numero ? <span className="ticket-chip">{ticket.pedido_numero}</span> : null}
       </div>
 
@@ -103,6 +104,12 @@ function TicketCard({ title, ticket, compact = false, showPrint = true, onPrint 
             <span>Motivo</span>
             <strong>{ticket.motivo || "-"}</strong>
           </div>
+          {ticket.factura ? (
+            <div>
+              <span>Factura</span>
+              <strong>{ticket.factura}</strong>
+            </div>
+          ) : null}
           {ticket.costo_unitario !== null && ticket.costo_unitario !== undefined ? (
             <div>
               <span>Costo unitario</span>

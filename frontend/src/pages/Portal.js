@@ -355,7 +355,8 @@ function WorkerPortal() {
     cantidad: "1",
     motivo: "compra_proveedor",
     proveedor_id: "",
-    precio_compra_unitario: ""
+    precio_compra_unitario: "",
+    factura: ""
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -449,6 +450,7 @@ function WorkerPortal() {
           cantidad: Number(movementForm.cantidad),
           motivo: movementForm.motivo,
           proveedor_id: movementForm.proveedor_id ? Number(movementForm.proveedor_id) : null,
+          factura: movementForm.factura || "",
           precio_compra_unitario:
             movementForm.tipo === "entrada" && movementForm.precio_compra_unitario
               ? Number(movementForm.precio_compra_unitario)
@@ -462,7 +464,8 @@ function WorkerPortal() {
         cantidad: "1",
         motivo: "compra_proveedor",
         proveedor_id: "",
-        precio_compra_unitario: ""
+        precio_compra_unitario: "",
+        factura: ""
       });
       setLastMovementTicket(response.tirilla || null);
       setSuccess("Movimiento registrado correctamente.");
@@ -731,14 +734,23 @@ function WorkerPortal() {
                 />
 
                 {movementForm.tipo === "entrada" ? (
-                  <input
-                    name="precio_compra_unitario"
-                    type="number"
-                    min="0"
-                    value={movementForm.precio_compra_unitario}
-                    onChange={handleMovementChange}
-                    placeholder="Costo unitario de compra"
-                  />
+                  <>
+                    <input
+                      name="precio_compra_unitario"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={movementForm.precio_compra_unitario}
+                      onChange={handleMovementChange}
+                      placeholder="Costo unitario de compra"
+                    />
+                    <input
+                      name="factura"
+                      value={movementForm.factura}
+                      onChange={handleMovementChange}
+                      placeholder="Factura o referencia de compra"
+                    />
+                  </>
                 ) : null}
 
                 <button className="btn btn-secondary" type="submit">

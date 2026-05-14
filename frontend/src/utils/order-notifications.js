@@ -5,7 +5,12 @@ export function detectNewPendingOrders(orders, knownIdsRef) {
 
   let notice = "";
 
-  if (previousIds.size > 0) {
+  if (previousIds.size === 0 && pendingOrders.length > 0) {
+    notice =
+      pendingOrders.length === 1
+        ? `Tienes 1 pedido pendiente por revisar.`
+        : `Tienes ${pendingOrders.length} pedidos pendientes por revisar.`;
+  } else if (previousIds.size > 0) {
     const freshOrders = pendingOrders.filter((order) => !previousIds.has(Number(order.id)));
 
     if (freshOrders.length === 1) {

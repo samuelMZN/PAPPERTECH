@@ -65,6 +65,7 @@ exports.getCatalogoPublico = async (_req, res) => {
       LEFT JOIN productos p
         ON p.categoria_id = c.id
        AND p.activo = 1
+       AND COALESCE(p.stock_actual, 0) > 0
       WHERE c.activo = 1
       GROUP BY c.id, c.nombre, c.descripcion, c.activo
       ORDER BY c.nombre ASC

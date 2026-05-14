@@ -451,7 +451,7 @@ function Home() {
           <article className="promo-card promo-card--secondary">
             <p>Categorias activas</p>
             <strong>{categoryShowcase.length}</strong>
-            <span>cada una aparece automaticamente en el inicio</span>
+            <span>solo aparecen si tienen productos con stock disponible</span>
           </article>
         </div>
       </section>
@@ -617,7 +617,7 @@ function Home() {
                 ))
               ) : (
                 <span className="category-panel__empty">
-                  Cuando agregues productos a esta categoria apareceran aqui.
+                  Cuando agregues productos con stock a esta categoria apareceran aqui.
                 </span>
               )}
             </div>
@@ -638,7 +638,7 @@ function Home() {
               ) : (
                 <li>
                   <strong>Sin productos aun</strong>
-                  <span>Esta categoria ya existe en la base y aparecera aqui aunque aun este vacia.</span>
+                  <span>Esta categoria aparecera aqui cuando tenga productos activos con stock disponible.</span>
                 </li>
               )}
             </ul>

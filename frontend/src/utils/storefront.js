@@ -54,6 +54,10 @@ function buildSource(entity) {
   );
 }
 
+function hasAvailableStock(producto) {
+  return Number(producto?.stock || 0) > 0;
+}
+
 function encodeSvg(svg) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
@@ -295,9 +299,10 @@ function buildProductSvg(kind, label, theme) {
 
 export function buildCategoryShowcase(categories, products) {
   const knownIds = new Set(categories.map((item) => Number(item.id)));
+  const availableProducts = products.filter(hasAvailableStock);
   const mapped = categories
     .map((category) => {
-      const items = products.filter(
+      const items = availableProducts.filter(
         (producto) => Number(producto.categoria_id) === Number(category.id)
       );
       const totalProductos = Number(category.total_productos || items.length || 0);
@@ -313,7 +318,7 @@ export function buildCategoryShowcase(categories, products) {
     })
     .filter((category) => category.total_productos > 0);
 
-  const uncategorizedItems = products.filter(
+  const uncategorizedItems = availableProducts.filter(
     (producto) => !knownIds.has(Number(producto.categoria_id))
   );
 

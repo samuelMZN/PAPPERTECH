@@ -109,6 +109,20 @@ function renderItems(ticket) {
           : ""
       }
       ${
+        ticket.margen_porcentaje !== null && ticket.margen_porcentaje !== undefined
+          ? `<div><span>Margen aplicado</span><strong>${escapeHtml(
+              `${Number(ticket.margen_porcentaje || 0).toFixed(2)}%`
+            )}</strong></div>`
+          : ""
+      }
+      ${
+        ticket.precio_venta_calculado !== null && ticket.precio_venta_calculado !== undefined
+          ? `<div><span>Precio calculado</span><strong>${escapeHtml(
+              formatCurrency(ticket.precio_venta_calculado)
+            )}</strong></div>`
+          : ""
+      }
+      ${
         ticket.stock_antes !== undefined
           ? `<div><span>Stock antes</span><strong>${escapeHtml(
               ticket.stock_antes

@@ -39,7 +39,7 @@ exports.movimiento = async (req, res) => {
 
     const [productos] = await connection.execute(
       `
-        SELECT id, nombre, stock_actual, precio_mayor, precio_detal
+        SELECT id, nombre, stock_actual, precio_mayor, precio_detal, margen_porcentaje
         FROM productos
         WHERE id = ?
       `,
@@ -87,6 +87,7 @@ exports.movimiento = async (req, res) => {
 
     let nuevoCostoPromedio = null;
     let precioVentaAsignado = null;
+    let margenPorcentajeAplicado = Number(productos[0].margen_porcentaje || 0);
     let proveedorNombre = null;
 
     if (tipo === "entrada" && precioCompraUnitario > 0) {
@@ -100,14 +101,11 @@ exports.movimiento = async (req, res) => {
           : precioCompraUnitario;
 
       const averageCostRounded = Number(nuevoCostoPromedio.toFixed(2));
-      const updates = ["precio_mayor = ?"];
-      const updateValues = [averageCostRounded];
-
-      if (Number(productos[0].precio_detal || 0) <= 0) {
-        precioVentaAsignado = averageCostRounded;
-        updates.push("precio_detal = ?");
-        updateValues.push(precioVentaAsignado);
-      }
+      precioVentaAsignado = Number(
+        (averageCostRounded * (1 + margenPorcentajeAplicado / 100)).toFixed(2)
+      );
+      const updates = ["precio_mayor = ?", "precio_detal = ?"];
+      const updateValues = [averageCostRounded, precioVentaAsignado];
 
       updateValues.push(producto_id);
 
@@ -143,6 +141,7 @@ exports.movimiento = async (req, res) => {
         precio_compra_promedio: nuevoCostoPromedio
           ? Number(nuevoCostoPromedio.toFixed(2))
           : null,
+        margen_porcentaje_aplicado: margenPorcentajeAplicado,
         precio_venta_asignado: precioVentaAsignado
       },
       ipAddress: req.ip
@@ -168,6 +167,8 @@ exports.movimiento = async (req, res) => {
         factura: String(factura || "").trim() || null,
         costo_unitario: tipo === "entrada" && precioCompraUnitario > 0 ? precioCompraUnitario : null,
         costo_promedio: nuevoCostoPromedio ? Number(nuevoCostoPromedio.toFixed(2)) : null,
+        margen_porcentaje: tipo === "entrada" ? margenPorcentajeAplicado : null,
+        precio_venta_calculado: precioVentaAsignado,
         total:
           tipo === "entrada" && precioCompraUnitario > 0
             ? Number((precioCompraUnitario * cantidadNormalizada).toFixed(2))

@@ -47,6 +47,13 @@ async function ensureRuntimeSchema() {
 
       await addColumnIfMissing(
         connection,
+        "productos",
+        "margen_porcentaje",
+        "DECIMAL(5,2) NOT NULL DEFAULT 0 AFTER precio_detal"
+      );
+
+      await addColumnIfMissing(
+        connection,
         "usuarios",
         "email_verificado",
         "TINYINT(1) NOT NULL DEFAULT 1 AFTER activo"

@@ -33,6 +33,7 @@ function buildProductoSelect(whereClause = "WHERE p.activo = 1") {
       p.descripcion,
       p.precio_mayor AS precio_compra,
       p.precio_detal AS precio_venta,
+      p.margen_porcentaje,
       p.stock_actual AS stock,
       p.stock_minimo,
       p.descuento_cantidad_minima,
@@ -121,8 +122,7 @@ exports.crearProducto = async (req, res) => {
   const {
     nombre,
     descripcion = "",
-    precio_compra = 0,
-    precio_venta = 0,
+    margen_porcentaje = 0,
     stock_inicial = 0,
     stock_minimo = 5,
     descuento_cantidad_minima = null,
@@ -138,10 +138,9 @@ exports.crearProducto = async (req, res) => {
   }
 
   if (
-    (hasValue(precio_venta) && Number(precio_venta) < 0) ||
-    (hasValue(precio_compra) && Number(precio_compra) < 0)
+    (hasValue(margen_porcentaje) && Number(margen_porcentaje) < 0)
   ) {
-    return res.status(400).json({ message: "Los precios no pueden ser negativos" });
+    return res.status(400).json({ message: "El porcentaje de margen no puede ser negativo" });
   }
 
   try {
@@ -151,22 +150,19 @@ exports.crearProducto = async (req, res) => {
     try {
       await connection.beginTransaction();
 
-      const precioVentaFinal = hasValue(precio_venta) ? Number(precio_venta) : 0;
-      const precioCompraFinal = hasValue(precio_compra)
-        ? Number(precio_compra)
-        : precioVentaFinal > 0
-          ? precioVentaFinal
-          : 0;
+      const margenPorcentajeFinal = hasValue(margen_porcentaje)
+        ? Number(margen_porcentaje)
+        : 0;
 
       const [resultado] = await connection.execute(
         `
           INSERT INTO productos
             (
               nombre, descripcion, categoria_id, marca_id, proveedor_id,
-              precio_detal, precio_mayor, stock_actual, stock_minimo,
+              precio_detal, margen_porcentaje, precio_mayor, stock_actual, stock_minimo,
               descuento_cantidad_minima, descuento_porcentaje, imagen_url
             )
-          VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, 0, ?, 0, 0, ?, ?, ?, ?)
         `,
         [
           nombre,
@@ -174,8 +170,7 @@ exports.crearProducto = async (req, res) => {
           categoriaFinal,
           marca_id ? Number(marca_id) : null,
           proveedor_id ? Number(proveedor_id) : null,
-          precioVentaFinal,
-          precioCompraFinal,
+          margenPorcentajeFinal,
           Number(stock_minimo) || 5,
           descuento_cantidad_minima ? Number(descuento_cantidad_minima) : null,
           descuento_porcentaje ? Number(descuento_porcentaje) : null,
@@ -205,8 +200,9 @@ exports.crearProducto = async (req, res) => {
           categoria_id: categoriaFinal,
           marca_id: marca_id ? Number(marca_id) : null,
           proveedor_id: proveedor_id ? Number(proveedor_id) : null,
-          precio_venta: precioVentaFinal,
-          precio_compra: precioCompraFinal,
+          precio_venta: 0,
+          precio_compra: 0,
+          margen_porcentaje: margenPorcentajeFinal,
           stock_minimo: Number(stock_minimo) || 5,
           descuento_cantidad_minima: descuento_cantidad_minima
             ? Number(descuento_cantidad_minima)
@@ -239,8 +235,7 @@ exports.actualizarProducto = async (req, res) => {
   const {
     nombre,
     descripcion = "",
-    precio_compra = 0,
-    precio_venta = 0,
+    margen_porcentaje = 0,
     ajuste_stock = 0,
     ajuste_motivo = "ajuste_manual",
     stock_minimo = 5,
@@ -257,10 +252,9 @@ exports.actualizarProducto = async (req, res) => {
   }
 
   if (
-    (hasValue(precio_venta) && Number(precio_venta) < 0) ||
-    (hasValue(precio_compra) && Number(precio_compra) < 0)
+    (hasValue(margen_porcentaje) && Number(margen_porcentaje) < 0)
   ) {
-    return res.status(400).json({ message: "Los precios no pueden ser negativos" });
+    return res.status(400).json({ message: "El porcentaje de margen no puede ser negativo" });
   }
 
   try {
@@ -282,25 +276,16 @@ exports.actualizarProducto = async (req, res) => {
       const categoriaFinal = await resolveCategoriaId(categoria_id);
       const ajuste = Number(ajuste_stock || 0);
       const stockActual = Number(existingRows[0].stock || 0);
-      const costoAnterior = Number(existingRows[0].precio_compra || 0);
-      const precioVentaFinal = hasValue(precio_venta)
-        ? Number(precio_venta)
-        : Number(existingRows[0].precio_venta || 0);
-      const precioCompraIngresado = hasValue(precio_compra)
-        ? Number(precio_compra)
-        : costoAnterior || precioVentaFinal || 0;
-      let precioCompraFinal = precioCompraIngresado;
-
-      if (ajuste > 0 && precioCompraIngresado > 0 && stockActual > 0) {
-        precioCompraFinal =
-          (stockActual * costoAnterior + ajuste * precioCompraIngresado) /
-          (stockActual + ajuste);
-      }
+      const precioVentaFinal = Number(existingRows[0].precio_venta || 0);
+      const precioCompraFinal = Number(existingRows[0].precio_compra || 0);
+      const margenPorcentajeFinal = hasValue(margen_porcentaje)
+        ? Number(margen_porcentaje)
+        : Number(existingRows[0].margen_porcentaje || 0);
 
       const [resultado] = await connection.execute(
         `
           UPDATE productos
-          SET nombre = ?, descripcion = ?, precio_detal = ?, precio_mayor = ?,
+          SET nombre = ?, descripcion = ?, precio_detal = ?, margen_porcentaje = ?, precio_mayor = ?,
               stock_minimo = ?, descuento_cantidad_minima = ?, descuento_porcentaje = ?,
               categoria_id = ?, marca_id = ?, proveedor_id = ?, imagen_url = ?
           WHERE id = ?
@@ -309,6 +294,7 @@ exports.actualizarProducto = async (req, res) => {
           nombre,
           descripcion,
           precioVentaFinal,
+          margenPorcentajeFinal,
           Number(precioCompraFinal.toFixed(2)),
           Number(stock_minimo) || 5,
           descuento_cantidad_minima ? Number(descuento_cantidad_minima) : null,
@@ -355,6 +341,7 @@ exports.actualizarProducto = async (req, res) => {
           descripcion,
           precio_venta: precioVentaFinal,
           precio_compra: Number(precioCompraFinal.toFixed(2)),
+          margen_porcentaje: margenPorcentajeFinal,
           stock_minimo: Number(stock_minimo) || 5,
           descuento_cantidad_minima: descuento_cantidad_minima
             ? Number(descuento_cantidad_minima)

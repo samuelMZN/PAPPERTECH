@@ -122,6 +122,20 @@ function TicketCard({ title, ticket, compact = false, showPrint = true, onPrint 
               <strong>{formatCurrency(ticket.costo_promedio)}</strong>
             </div>
           ) : null}
+          {ticket.margen_porcentaje !== null &&
+          ticket.margen_porcentaje !== undefined ? (
+            <div>
+              <span>Margen aplicado</span>
+              <strong>{Number(ticket.margen_porcentaje || 0).toFixed(2)}%</strong>
+            </div>
+          ) : null}
+          {ticket.precio_venta_calculado !== null &&
+          ticket.precio_venta_calculado !== undefined ? (
+            <div>
+              <span>Precio calculado</span>
+              <strong>{formatCurrency(ticket.precio_venta_calculado)}</strong>
+            </div>
+          ) : null}
           {ticket.stock_antes !== undefined ? (
             <div>
               <span>Stock antes</span>

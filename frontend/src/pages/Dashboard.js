@@ -86,7 +86,7 @@ const initialProductForm = {
   categoria_id: "",
   marca_id: "",
   proveedor_id: "",
-  precio_venta: "",
+  margen_porcentaje: "",
   stock_minimo: "5",
   descuento_cantidad_minima: "",
   descuento_porcentaje: "",
@@ -548,7 +548,7 @@ function Dashboard() {
           categoria_id: productForm.categoria_id ? Number(productForm.categoria_id) : null,
           marca_id: productForm.marca_id ? Number(productForm.marca_id) : null,
           proveedor_id: productForm.proveedor_id ? Number(productForm.proveedor_id) : null,
-          precio_venta: Number(productForm.precio_venta || 0),
+          margen_porcentaje: Number(productForm.margen_porcentaje || 0),
           stock_minimo: Number(productForm.stock_minimo || 5),
           descuento_cantidad_minima: productForm.descuento_cantidad_minima
             ? Number(productForm.descuento_cantidad_minima)
@@ -577,7 +577,7 @@ function Dashboard() {
       categoria_id: item.categoria_id || "",
       marca_id: item.marca_id || "",
       proveedor_id: item.proveedor_id || "",
-      precio_venta: item.precio_venta || "",
+      margen_porcentaje: item.margen_porcentaje ?? "",
       stock_minimo: item.stock_minimo || "5",
       descuento_cantidad_minima: item.descuento_cantidad_minima || "",
       descuento_porcentaje: item.descuento_porcentaje || "",
@@ -1083,17 +1083,17 @@ function Dashboard() {
             <article className="panel">
               <div className="panel-header">
                 <div>
-                  <h2>Top productos vendidos</h2>
-                  <p>Ranking calculado con los detalles de pedido.</p>
+                  <h2>Pedidos recientes</h2>
+                  <p>Vista rapida de los ultimos pedidos registrados.</p>
                 </div>
               </div>
 
               <ul className="activity-list">
-                {(summary?.top_productos || []).map((item) => (
+                {(summary?.pedidos_recientes || []).map((item) => (
                   <li key={item.id}>
-                    <strong>{item.nombre}</strong>
+                    <strong>Pedido #{item.id}</strong>
                     <span>
-                      {item.unidades_vendidas} unidades - {formatCurrency(item.total_vendido)}
+                      {item.cliente} - {item.estado} - {formatCurrency(item.total_neto)}
                     </span>
                   </li>
                 ))}
@@ -1227,18 +1227,18 @@ function Dashboard() {
             <div className="inventory-callout">
               <div>
                 <strong>{productForm.id ? "Editando producto" : "Creando producto"}</strong>
-                <span>
-                  {productForm.id
-                    ? "Puedes cambiar nombre, categoria, proveedor, precio de venta, descuentos e imagen sin tocar el stock directo."
-                    : "El producto se crea sin stock manual y puede quedar sin precio inicial. La existencia y el valor aparecen cuando registras compras al proveedor."}
-                </span>
-              </div>
-              <div>
-                <strong>Costo separado</strong>
-                <span>
-                  El sistema sigue guardando costo promedio internamente, pero ya no mostramos ni editamos precio al por mayor en esta seccion.
-                </span>
-              </div>
+                  <span>
+                    {productForm.id
+                      ? "Puedes cambiar nombre, categoria, proveedor, margen, descuentos e imagen sin tocar el stock directo."
+                      : "El producto se crea sin precio manual. El valor de venta se calcula cuando compras al proveedor usando el porcentaje de margen."}
+                  </span>
+                </div>
+                <div>
+                  <strong>Precio automatico</strong>
+                  <span>
+                    El sistema guarda el costo promedio y recalcula el precio de venta con el porcentaje de margen cada vez que registras una compra.
+                  </span>
+                </div>
             </div>
 
             <form className="form-grid" onSubmit={submitProduct}>
@@ -1280,13 +1280,14 @@ function Dashboard() {
                 ))}
               </select>
               <input
-                name="precio_venta"
+                name="margen_porcentaje"
                 type="number"
                 min="0"
                 step="0.01"
-                value={productForm.precio_venta}
+                value={productForm.margen_porcentaje}
                 onChange={handleProductChange}
-                placeholder="Precio de venta opcional"
+                placeholder="Margen de venta (%)"
+                required
               />
 
               <input
@@ -1360,6 +1361,7 @@ function Dashboard() {
                     <th>Producto</th>
                     <th>Categoria</th>
                     <th>Detal</th>
+                    <th>Margen</th>
                     <th>Proveedor</th>
                     <th>Descuento</th>
                     <th>Stock</th>
@@ -1373,6 +1375,7 @@ function Dashboard() {
                       <td>{item.nombre}</td>
                       <td>{item.categoria || "-"}</td>
                       <td>{formatCatalogPrice(item.precio_venta)}</td>
+                      <td>{formatPercent(item.margen_porcentaje || 0)}</td>
                       <td>{item.proveedor || "-"}</td>
                       <td>
                         {item.descuento_cantidad_minima && item.descuento_porcentaje

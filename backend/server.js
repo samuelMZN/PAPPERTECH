@@ -4,9 +4,18 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOSTNAME || "::";
 
 app.use(cors());
 app.use(express.json());
+
+app.get("/", (_req, res) => {
+  res.json({
+    status: "ok",
+    message: "API PapperTech activa",
+    healthcheck: "/api/health"
+  });
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", message: "API PapperTech activa" });
@@ -23,8 +32,8 @@ app.use("/api/pedidos", require("./routes/pedidos.routes"));
 app.use("/api/usuarios", require("./routes/usuarios.routes"));
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Servidor en http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`Servidor en http://${HOST}:${PORT}`);
   });
 }
 

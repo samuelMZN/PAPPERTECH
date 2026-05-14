@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { apiRequest } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
 function Navbar() {
-  const { isAuthenticated, user, logout, isAdministrator, isWorker, isClient } = useAuth();
+  const { isAuthenticated, user, token, logout, isAdministrator, isWorker, isClient } = useAuth();
   const { cartCount } = useCart();
   const { theme, isDark, toggleTheme } = useTheme();
   const location = useLocation();
@@ -13,6 +14,7 @@ function Navbar() {
   const brandLogo = `${process.env.PUBLIC_URL || ""}/logo-pappertech.png`;
   const headerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
 
   useEffect(() => {
     const updateHeaderHeight = () => {
@@ -45,6 +47,50 @@ function Navbar() {
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    let active = true;
+    let intervalId;
+
+    async function loadPendingOrders() {
+      if (!token || !isClient) {
+        if (active) {
+          setPendingOrdersCount(0);
+        }
+        return;
+      }
+
+      try {
+        const orders = await apiRequest("/pedidos", { token });
+
+        if (!active) {
+          return;
+        }
+
+        setPendingOrdersCount(
+          orders.filter((order) => String(order.estado || "").toLowerCase() === "pendiente").length
+        );
+      } catch (_error) {
+        if (active) {
+          setPendingOrdersCount(0);
+        }
+      }
+    }
+
+    loadPendingOrders();
+
+    if (token && isClient) {
+      intervalId = window.setInterval(loadPendingOrders, 20000);
+    }
+
+    return () => {
+      active = false;
+
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [isClient, token, location.pathname]);
 
   const handleLogout = () => {
     setMenuOpen(false);
@@ -101,8 +147,11 @@ function Navbar() {
               </Link>
             ) : null}
             {isClient ? (
-              <Link to="/panel" onClick={closeMenu}>
-                Mi cuenta
+              <Link className="topbar-link-with-badge" to="/panel" onClick={closeMenu}>
+                <span>Mi cuenta</span>
+                {pendingOrdersCount > 0 ? (
+                  <span className="topbar-link__badge">{pendingOrdersCount}</span>
+                ) : null}
               </Link>
             ) : null}
             {isClient ? (

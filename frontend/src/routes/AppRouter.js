@@ -7,7 +7,6 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Portal from "../pages/Portal";
 import Register from "../pages/Register";
-import VerifyEmail from "../pages/VerifyEmail";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -75,7 +74,6 @@ function AppRouter() {
                 </PublicRoute>
               }
             />
-            <Route path="/verificar-correo" element={<VerifyEmail />} />
             <Route
               path="/dashboard"
               element={

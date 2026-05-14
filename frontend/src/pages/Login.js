@@ -1,13 +1,26 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const successMessage = location.state?.successMessage;
+
+    if (!successMessage) {
+      return;
+    }
+
+    setSuccess(successMessage);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -17,6 +30,7 @@ function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -59,6 +73,7 @@ function Login() {
         />
 
         {error ? <p className="message error">{error}</p> : null}
+        {success ? <p className="message success">{success}</p> : null}
 
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
           {loading ? "Entrando..." : "Entrar"}

@@ -25,6 +25,40 @@ function hasValue(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
 }
 
+const DEFAULT_MARGIN_BY_CATEGORY = {
+  general: 30,
+  cuadernos: 28,
+  escritura: 35,
+  oficina: 40,
+  arte: 45,
+  industrial: 50
+};
+
+function normalizeCategoryName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function getDefaultMarginForCategoryName(name) {
+  return DEFAULT_MARGIN_BY_CATEGORY[normalizeCategoryName(name)] ?? 30;
+}
+
+async function getCategoriaNombreById(executor, categoriaId) {
+  if (!categoriaId) {
+    return "";
+  }
+
+  const [rows] = await executor.execute(
+    "SELECT nombre FROM categorias WHERE id = ? LIMIT 1",
+    [categoriaId]
+  );
+
+  return rows[0]?.nombre || "";
+}
+
 function buildProductoSelect(whereClause = "WHERE p.activo = 1") {
   return `
     SELECT
@@ -150,9 +184,10 @@ exports.crearProducto = async (req, res) => {
     try {
       await connection.beginTransaction();
 
+      const categoriaNombre = await getCategoriaNombreById(connection, categoriaFinal);
       const margenPorcentajeFinal = hasValue(margen_porcentaje)
         ? Number(margen_porcentaje)
-        : 0;
+        : getDefaultMarginForCategoryName(categoriaNombre);
 
       const [resultado] = await connection.execute(
         `
@@ -278,9 +313,12 @@ exports.actualizarProducto = async (req, res) => {
       const stockActual = Number(existingRows[0].stock || 0);
       const precioVentaFinal = Number(existingRows[0].precio_venta || 0);
       const precioCompraFinal = Number(existingRows[0].precio_compra || 0);
+      const categoriaNombre = await getCategoriaNombreById(connection, categoriaFinal);
       const margenPorcentajeFinal = hasValue(margen_porcentaje)
         ? Number(margen_porcentaje)
-        : Number(existingRows[0].margen_porcentaje || 0);
+        : hasValue(existingRows[0].margen_porcentaje)
+          ? Number(existingRows[0].margen_porcentaje)
+          : getDefaultMarginForCategoryName(categoriaNombre);
 
       const [resultado] = await connection.execute(
         `

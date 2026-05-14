@@ -132,6 +132,37 @@ const initialProviderForm = {
   direccion: ""
 };
 
+const DEFAULT_MARGIN_BY_CATEGORY = {
+  general: 30,
+  cuadernos: 28,
+  escritura: 35,
+  oficina: 40,
+  arte: 45,
+  industrial: 50
+};
+
+function normalizeCategoryName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function getDefaultMarginForCategoryName(name) {
+  return DEFAULT_MARGIN_BY_CATEGORY[normalizeCategoryName(name)] ?? 30;
+}
+
+function getSuggestedMarginForCategoryId(categoryId, categorias = []) {
+  if (!categoryId) {
+    return "";
+  }
+
+  const category = categorias.find((item) => String(item.id) === String(categoryId));
+  const suggestedMargin = getDefaultMarginForCategoryName(category?.nombre);
+  return String(suggestedMargin);
+}
+
 function buildPurchaseReportPath(filters = {}) {
   const params = new URLSearchParams();
 
@@ -435,7 +466,22 @@ function Dashboard() {
 
   const handleProductChange = (event) => {
     const { name, value } = event.target;
-    setProductForm((current) => ({ ...current, [name]: value }));
+    setProductForm((current) => {
+      if (name === "categoria_id" && !current.id) {
+        const previousSuggestedMargin = getSuggestedMarginForCategoryId(current.categoria_id, catalogos.categorias);
+        const nextSuggestedMargin = getSuggestedMarginForCategoryId(value, catalogos.categorias);
+        const shouldReplaceMargin =
+          !current.margen_porcentaje || String(current.margen_porcentaje) === String(previousSuggestedMargin);
+
+        return {
+          ...current,
+          categoria_id: value,
+          margen_porcentaje: shouldReplaceMargin ? nextSuggestedMargin : current.margen_porcentaje
+        };
+      }
+
+      return { ...current, [name]: value };
+    });
   };
 
   const handleCategoryChange = (event) => {
@@ -1289,6 +1335,11 @@ function Dashboard() {
                 placeholder="Margen de venta (%)"
                 required
               />
+              {!productForm.id && productForm.categoria_id ? (
+                <div className="form-note">
+                  Sugerido para esta categoria: {getSuggestedMarginForCategoryId(productForm.categoria_id, catalogos.categorias)}%
+                </div>
+              ) : null}
 
               <input
                 name="stock_minimo"

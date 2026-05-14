@@ -1023,6 +1023,60 @@ button {
   color: var(--muted);
 }
 
+.activity-list--catalog li {
+  gap: 12px;
+  padding: 18px 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, #20406a 6%), var(--surface-soft));
+  box-shadow: var(--soft-shadow);
+}
+
+.catalog-admin-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.catalog-admin-card__head strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.catalog-admin-card__meta {
+  font-size: 0.95rem;
+}
+
+.catalog-admin-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.status-chip--active {
+  background: rgba(69, 201, 144, 0.14);
+  color: #7df0ba;
+  border: 1px solid rgba(69, 201, 144, 0.26);
+}
+
+.status-chip--inactive {
+  background: rgba(239, 104, 118, 0.12);
+  color: #ff8e9c;
+  border: 1px solid rgba(239, 104, 118, 0.24);
+}
+
 .home-page {
   display: grid;
   gap: 28px;

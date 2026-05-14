@@ -14,9 +14,9 @@ async function getCatalogData() {
       ORDER BY activo DESC, nombre ASC
     `),
     db.promise().query(`
-      SELECT id, nombre, nit, telefono, email, direccion, creado_en, actualizado_en
+      SELECT id, nombre, nit, telefono, email, direccion, activo, creado_en, actualizado_en
       FROM proveedores
-      ORDER BY nombre ASC
+      ORDER BY activo DESC, nombre ASC
     `)
   ]);
 
@@ -281,12 +281,49 @@ exports.actualizarMarca = async (req, res) => {
   }
 };
 
+exports.eliminarMarca = async (req, res) => {
+  try {
+    const [rows] = await db.promise().execute(
+      "SELECT id, nombre, descripcion, activo FROM marcas WHERE id = ? LIMIT 1",
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Marca no encontrada" });
+    }
+
+    const [result] = await db.promise().execute(
+      "DELETE FROM marcas WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Marca no encontrada" });
+    }
+
+    await logAudit(db.promise(), {
+      usuarioId: req.user.id,
+      accion: "eliminar_definitivo",
+      tabla: "marcas",
+      registroId: Number(req.params.id),
+      valoresAntiguos: rows[0],
+      valoresNuevos: null,
+      ipAddress: req.ip
+    });
+
+    return res.json({ message: "Marca eliminada correctamente" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al eliminar marca", error: error.message });
+  }
+};
+
 exports.crearProveedor = async (req, res) => {
   const nombre = String(req.body.nombre || "").trim();
   const nit = String(req.body.nit || "").trim();
   const telefono = String(req.body.telefono || "").trim();
   const email = String(req.body.email || "").trim().toLowerCase();
   const direccion = String(req.body.direccion || "").trim();
+  const activo = req.body.activo === undefined ? 1 : Number(Boolean(req.body.activo));
 
   if (!nombre) {
     return res.status(400).json({ message: "El nombre del proveedor es obligatorio" });
@@ -295,10 +332,10 @@ exports.crearProveedor = async (req, res) => {
   try {
     const [result] = await db.promise().execute(
       `
-        INSERT INTO proveedores (nombre, nit, telefono, email, direccion)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO proveedores (nombre, nit, telefono, email, direccion, activo)
+        VALUES (?, ?, ?, ?, ?, ?)
       `,
-      [nombre, nit || null, telefono, email || null, direccion]
+      [nombre, nit || null, telefono, email || null, direccion, activo]
     );
 
     await logAudit(db.promise(), {
@@ -306,7 +343,7 @@ exports.crearProveedor = async (req, res) => {
       accion: "crear",
       tabla: "proveedores",
       registroId: result.insertId,
-      valoresNuevos: { nombre, nit, telefono, email, direccion },
+      valoresNuevos: { nombre, nit, telefono, email, direccion, activo },
       ipAddress: req.ip
     });
 
@@ -322,6 +359,7 @@ exports.actualizarProveedor = async (req, res) => {
   const telefono = String(req.body.telefono || "").trim();
   const email = String(req.body.email || "").trim().toLowerCase();
   const direccion = String(req.body.direccion || "").trim();
+  const activo = req.body.activo === undefined ? 1 : Number(Boolean(req.body.activo));
 
   if (!nombre) {
     return res.status(400).json({ message: "El nombre del proveedor es obligatorio" });
@@ -331,10 +369,10 @@ exports.actualizarProveedor = async (req, res) => {
     const [result] = await db.promise().execute(
       `
         UPDATE proveedores
-        SET nombre = ?, nit = ?, telefono = ?, email = ?, direccion = ?
+        SET nombre = ?, nit = ?, telefono = ?, email = ?, direccion = ?, activo = ?
         WHERE id = ?
       `,
-      [nombre, nit || null, telefono, email || null, direccion, req.params.id]
+      [nombre, nit || null, telefono, email || null, direccion, activo, req.params.id]
     );
 
     if (result.affectedRows === 0) {
@@ -346,12 +384,48 @@ exports.actualizarProveedor = async (req, res) => {
       accion: "actualizar",
       tabla: "proveedores",
       registroId: Number(req.params.id),
-      valoresNuevos: { nombre, nit, telefono, email, direccion },
+      valoresNuevos: { nombre, nit, telefono, email, direccion, activo },
       ipAddress: req.ip
     });
 
     return res.json({ message: "Proveedor actualizado correctamente" });
   } catch (error) {
     return res.status(500).json({ message: "Error al actualizar proveedor", error: error.message });
+  }
+};
+
+exports.eliminarProveedor = async (req, res) => {
+  try {
+    const [rows] = await db.promise().execute(
+      "SELECT id, nombre, nit, telefono, email, direccion, activo FROM proveedores WHERE id = ? LIMIT 1",
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Proveedor no encontrado" });
+    }
+
+    const [result] = await db.promise().execute(
+      "DELETE FROM proveedores WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Proveedor no encontrado" });
+    }
+
+    await logAudit(db.promise(), {
+      usuarioId: req.user.id,
+      accion: "eliminar_definitivo",
+      tabla: "proveedores",
+      registroId: Number(req.params.id),
+      valoresAntiguos: rows[0],
+      valoresNuevos: null,
+      ipAddress: req.ip
+    });
+
+    return res.json({ message: "Proveedor eliminado correctamente" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al eliminar proveedor", error: error.message });
   }
 };

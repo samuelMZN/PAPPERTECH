@@ -15,8 +15,10 @@ router.delete("/categorias/:id", authMiddleware, adminOnly, catalogosController.
 
 router.post("/marcas", authMiddleware, adminOnly, catalogosController.crearMarca);
 router.put("/marcas/:id", authMiddleware, adminOnly, catalogosController.actualizarMarca);
+router.delete("/marcas/:id", authMiddleware, adminOnly, catalogosController.eliminarMarca);
 
 router.post("/proveedores", authMiddleware, adminOnly, catalogosController.crearProveedor);
 router.put("/proveedores/:id", authMiddleware, adminOnly, catalogosController.actualizarProveedor);
+router.delete("/proveedores/:id", authMiddleware, adminOnly, catalogosController.eliminarProveedor);
 
 module.exports = router;

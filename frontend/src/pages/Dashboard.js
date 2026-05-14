@@ -143,7 +143,8 @@ const initialProviderForm = {
   nit: "",
   telefono: "",
   email: "",
-  direccion: ""
+  direccion: "",
+  activo: true
 };
 
 const DEFAULT_MARGIN_BY_CATEGORY = {
@@ -558,7 +559,10 @@ function Dashboard() {
 
   const handleProviderChange = (event) => {
     const { name, value } = event.target;
-    setProviderForm((current) => ({ ...current, [name]: value }));
+    setProviderForm((current) => ({
+      ...current,
+      [name]: name === "activo" ? handleBooleanValue(value) : value
+    }));
   };
 
   const handlePurchaseChange = (event) => {
@@ -801,6 +805,22 @@ function Dashboard() {
     }
   };
 
+  const deleteBrand = async (item) => {
+    resetMessages();
+
+    try {
+      await apiRequest(`/catalogos/marcas/${item.id}`, {
+        method: "DELETE",
+        token
+      });
+
+      setSuccess("Marca eliminada correctamente.");
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
   const submitProvider = async (event) => {
     event.preventDefault();
     resetMessages();
@@ -817,6 +837,46 @@ function Dashboard() {
 
       setProviderForm(initialProviderForm);
       setSuccess("Proveedor guardado correctamente.");
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  const toggleProviderState = async (item) => {
+    resetMessages();
+
+    try {
+      await apiRequest(`/catalogos/proveedores/${item.id}`, {
+        method: "PUT",
+        token,
+        body: {
+          nombre: item.nombre,
+          nit: item.nit || "",
+          telefono: item.telefono || "",
+          email: item.email || "",
+          direccion: item.direccion || "",
+          activo: !Boolean(item.activo)
+        }
+      });
+
+      setSuccess(`Proveedor ${item.activo ? "desactivado" : "activado"} correctamente.`);
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  const deleteProvider = async (item) => {
+    resetMessages();
+
+    try {
+      await apiRequest(`/catalogos/proveedores/${item.id}`, {
+        method: "DELETE",
+        token
+      });
+
+      setSuccess("Proveedor eliminado correctamente.");
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -1995,32 +2055,39 @@ function Dashboard() {
               </button>
             </div>
 
-            <ul className="activity-list">
+            <ul className="activity-list activity-list--catalog">
               {visibleCategories.map((item) => (
                 <li key={item.id}>
-                  <strong>{item.nombre}</strong>
-                  <span>{item.activo ? "Activa" : "Inactiva"}</span>
-                  <button
-                    className="btn btn-outline"
-                    type="button"
-                    onClick={() =>
-                      setCategoryForm({
-                        id: item.id,
-                        nombre: item.nombre,
-                        descripcion: item.descripcion || "",
-                        activo: Boolean(item.activo)
-                      })
-                    }
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-outline btn-danger-lite"
-                    type="button"
-                    onClick={() => deleteCategory(item)}
-                  >
-                    Eliminar
-                  </button>
+                  <div className="catalog-admin-card__head">
+                    <strong>{item.nombre}</strong>
+                    <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                      {item.activo ? "Activa" : "Inactiva"}
+                    </span>
+                  </div>
+                  <span>{item.descripcion || "Sin descripcion registrada"}</span>
+                  <div className="catalog-admin-card__actions">
+                    <button
+                      className="btn btn-outline"
+                      type="button"
+                      onClick={() =>
+                        setCategoryForm({
+                          id: item.id,
+                          nombre: item.nombre,
+                          descripcion: item.descripcion || "",
+                          activo: Boolean(item.activo)
+                        })
+                      }
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="btn btn-outline btn-danger-lite"
+                      type="button"
+                      onClick={() => deleteCategory(item)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -2070,25 +2137,39 @@ function Dashboard() {
               </button>
             </div>
 
-            <ul className="activity-list">
+            <ul className="activity-list activity-list--catalog">
               {visibleBrands.map((item) => (
                 <li key={item.id}>
-                  <strong>{item.nombre}</strong>
-                  <span>{item.activo ? "Activa" : "Inactiva"}</span>
-                  <button
-                    className="btn btn-outline"
-                    type="button"
-                    onClick={() =>
-                      setBrandForm({
-                        id: item.id,
-                        nombre: item.nombre,
-                        descripcion: item.descripcion || "",
-                        activo: Boolean(item.activo)
-                      })
-                    }
-                  >
-                    Editar
-                  </button>
+                  <div className="catalog-admin-card__head">
+                    <strong>{item.nombre}</strong>
+                    <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                      {item.activo ? "Activa" : "Inactiva"}
+                    </span>
+                  </div>
+                  <span>{item.descripcion || "Sin descripcion registrada"}</span>
+                  <div className="catalog-admin-card__actions">
+                    <button
+                      className="btn btn-outline"
+                      type="button"
+                      onClick={() =>
+                        setBrandForm({
+                          id: item.id,
+                          nombre: item.nombre,
+                          descripcion: item.descripcion || "",
+                          activo: Boolean(item.activo)
+                        })
+                      }
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="btn btn-outline btn-danger-lite"
+                      type="button"
+                      onClick={() => deleteBrand(item)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -2108,6 +2189,10 @@ function Dashboard() {
               <input name="telefono" value={providerForm.telefono} onChange={handleProviderChange} placeholder="Telefono" />
               <input name="email" type="email" value={providerForm.email} onChange={handleProviderChange} placeholder="Correo" />
               <input name="direccion" value={providerForm.direccion} onChange={handleProviderChange} placeholder="Direccion" />
+              <select name="activo" value={String(providerForm.activo)} onChange={handleProviderChange}>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
               <div className="form-actions">
                 <button className="btn btn-primary" type="submit">
                   {providerForm.id ? "Actualizar proveedor" : "Crear proveedor"}
@@ -2137,29 +2222,52 @@ function Dashboard() {
               </button>
             </div>
 
-            <ul className="activity-list">
+            <ul className="activity-list activity-list--catalog">
               {visibleProviders.map((item) => (
                 <li key={item.id}>
-                  <strong>{item.nombre}</strong>
-                  <span>
-                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} - {item.email || "Sin correo"} - {item.telefono || "Sin telefono"}
+                  <div className="catalog-admin-card__head">
+                    <strong>{item.nombre}</strong>
+                    <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                      {item.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                  <span className="catalog-admin-card__meta">
+                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} • {item.email || "Sin correo"} • {item.telefono || "Sin telefono"}
                   </span>
-                  <button
-                    className="btn btn-outline"
-                    type="button"
-                    onClick={() =>
-                      setProviderForm({
-                        id: item.id,
-                        nombre: item.nombre,
-                        nit: item.nit || "",
-                        telefono: item.telefono || "",
-                        email: item.email || "",
-                        direccion: item.direccion || ""
-                      })
-                    }
-                  >
-                    Editar
-                  </button>
+                  <span>{item.direccion || "Sin direccion registrada"}</span>
+                  <div className="catalog-admin-card__actions">
+                    <button
+                      className="btn btn-outline"
+                      type="button"
+                      onClick={() =>
+                        setProviderForm({
+                          id: item.id,
+                          nombre: item.nombre,
+                          nit: item.nit || "",
+                          telefono: item.telefono || "",
+                          email: item.email || "",
+                          direccion: item.direccion || "",
+                          activo: Boolean(item.activo)
+                        })
+                      }
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      type="button"
+                      onClick={() => toggleProviderState(item)}
+                    >
+                      {item.activo ? "Desactivar" : "Activar"}
+                    </button>
+                    <button
+                      className="btn btn-outline btn-danger-lite"
+                      type="button"
+                      onClick={() => deleteProvider(item)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

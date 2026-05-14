@@ -54,6 +54,13 @@ async function ensureRuntimeSchema() {
 
       await addColumnIfMissing(
         connection,
+        "proveedores",
+        "activo",
+        "TINYINT(1) NOT NULL DEFAULT 1 AFTER direccion"
+      );
+
+      await addColumnIfMissing(
+        connection,
         "usuarios",
         "email_verificado",
         "TINYINT(1) NOT NULL DEFAULT 1 AFTER activo"

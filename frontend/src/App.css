@@ -860,6 +860,32 @@ button {
 .purchase-report-filters__field input,
 .purchase-report-filters__field select {
   width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--surface);
+  background-clip: padding-box;
+}
+
+.purchase-report-filters__field select {
+  padding-right: 44px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) calc(50% - 3px),
+    calc(100% - 16px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.purchase-report-filters__field input[type="date"] {
+  color: var(--ink);
+}
+
+.purchase-report-filters__field input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.92;
+  cursor: pointer;
+  filter: invert(92%) sepia(11%) saturate(381%) hue-rotate(181deg) brightness(102%) contrast(96%);
 }
 
 .purchase-report-filters__action {

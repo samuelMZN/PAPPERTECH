@@ -687,6 +687,8 @@ button {
 .form-grid input,
 .form-grid select,
 .form-grid textarea,
+.purchase-report-filters__field input,
+.purchase-report-filters__field select,
 .auth-card input,
 .store-search__input {
   width: 100%;
@@ -696,6 +698,7 @@ button {
   background: var(--surface);
   color: var(--ink);
   outline: none;
+  min-height: 54px;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
@@ -703,10 +706,25 @@ button {
 .form-grid input:focus,
 .form-grid select:focus,
 .form-grid textarea:focus,
+.purchase-report-filters__field input:focus,
+.purchase-report-filters__field select:focus,
 .auth-card input:focus,
 .store-search__input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.search-input::placeholder,
+.form-grid input::placeholder,
+.form-grid textarea::placeholder,
+.purchase-report-filters__field input::placeholder,
+.auth-card input::placeholder,
+.store-search__input::placeholder {
+  color: var(--muted);
+}
+
+.purchase-report-filters__field input[type="date"] {
+  color-scheme: dark;
 }
 
 .form-grid textarea {

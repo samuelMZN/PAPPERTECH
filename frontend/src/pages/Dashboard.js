@@ -50,6 +50,12 @@ function matchesSearch(query, ...values) {
   return values.some((value) => normalizeSearchValue(value).includes(normalizedQuery));
 }
 
+function getCatalogEmptyMessage(entityLabel, query) {
+  return normalizeSearchValue(query)
+    ? `No hay ${entityLabel} que coincidan con el filtro actual.`
+    : `No hay ${entityLabel} registradas todavia.`;
+}
+
 function getOrderActions(estado) {
   if (estado === "pendiente") {
     return [
@@ -746,6 +752,10 @@ function Dashboard() {
   };
 
   const deleteCategory = async (item) => {
+    if (!window.confirm(`Vas a eliminar la categoria "${item.nombre}". Esta accion no se puede deshacer.`)) {
+      return;
+    }
+
     resetMessages();
 
     try {
@@ -755,6 +765,9 @@ function Dashboard() {
       });
 
       setSuccess("Categoria eliminada correctamente.");
+      if (String(categoryForm.id) === String(item.id)) {
+        setCategoryForm(initialCategoryForm);
+      }
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -806,6 +819,10 @@ function Dashboard() {
   };
 
   const deleteBrand = async (item) => {
+    if (!window.confirm(`Vas a eliminar la marca "${item.nombre}". Esta accion no se puede deshacer.`)) {
+      return;
+    }
+
     resetMessages();
 
     try {
@@ -815,6 +832,9 @@ function Dashboard() {
       });
 
       setSuccess("Marca eliminada correctamente.");
+      if (String(brandForm.id) === String(item.id)) {
+        setBrandForm(initialBrandForm);
+      }
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -868,6 +888,10 @@ function Dashboard() {
   };
 
   const deleteProvider = async (item) => {
+    if (!window.confirm(`Vas a eliminar el proveedor "${item.nombre}". Esta accion no se puede deshacer.`)) {
+      return;
+    }
+
     resetMessages();
 
     try {
@@ -877,6 +901,9 @@ function Dashboard() {
       });
 
       setSuccess("Proveedor eliminado correctamente.");
+      if (String(providerForm.id) === String(item.id)) {
+        setProviderForm(initialProviderForm);
+      }
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -2055,42 +2082,48 @@ function Dashboard() {
               </button>
             </div>
 
-            <ul className="activity-list activity-list--catalog">
-              {visibleCategories.map((item) => (
-                <li key={item.id}>
-                  <div className="catalog-admin-card__head">
-                    <strong>{item.nombre}</strong>
-                    <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
-                      {item.activo ? "Activa" : "Inactiva"}
-                    </span>
-                  </div>
-                  <span>{item.descripcion || "Sin descripcion registrada"}</span>
-                  <div className="catalog-admin-card__actions">
-                    <button
-                      className="btn btn-outline"
-                      type="button"
-                      onClick={() =>
-                        setCategoryForm({
-                          id: item.id,
-                          nombre: item.nombre,
-                          descripcion: item.descripcion || "",
-                          activo: Boolean(item.activo)
-                        })
-                      }
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="btn btn-outline btn-danger-lite"
-                      type="button"
-                      onClick={() => deleteCategory(item)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {visibleCategories.length > 0 ? (
+              <ul className="activity-list activity-list--catalog">
+                {visibleCategories.map((item) => (
+                  <li key={item.id}>
+                    <div className="catalog-admin-card__head">
+                      <strong>{item.nombre}</strong>
+                      <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                        {item.activo ? "Activa" : "Inactiva"}
+                      </span>
+                    </div>
+                    <span>{item.descripcion || "Sin descripcion registrada"}</span>
+                    <div className="catalog-admin-card__actions">
+                      <button
+                        className="btn btn-outline"
+                        type="button"
+                        onClick={() =>
+                          setCategoryForm({
+                            id: item.id,
+                            nombre: item.nombre,
+                            descripcion: item.descripcion || "",
+                            activo: Boolean(item.activo)
+                          })
+                        }
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-outline btn-danger-lite"
+                        type="button"
+                        onClick={() => deleteCategory(item)}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-state empty-state--catalog">
+                {getCatalogEmptyMessage("categorias", categoryQuery)}
+              </div>
+            )}
           </article>
 
           <article className="panel">
@@ -2137,42 +2170,48 @@ function Dashboard() {
               </button>
             </div>
 
-            <ul className="activity-list activity-list--catalog">
-              {visibleBrands.map((item) => (
-                <li key={item.id}>
-                  <div className="catalog-admin-card__head">
-                    <strong>{item.nombre}</strong>
-                    <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
-                      {item.activo ? "Activa" : "Inactiva"}
-                    </span>
-                  </div>
-                  <span>{item.descripcion || "Sin descripcion registrada"}</span>
-                  <div className="catalog-admin-card__actions">
-                    <button
-                      className="btn btn-outline"
-                      type="button"
-                      onClick={() =>
-                        setBrandForm({
-                          id: item.id,
-                          nombre: item.nombre,
-                          descripcion: item.descripcion || "",
-                          activo: Boolean(item.activo)
-                        })
-                      }
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="btn btn-outline btn-danger-lite"
-                      type="button"
-                      onClick={() => deleteBrand(item)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {visibleBrands.length > 0 ? (
+              <ul className="activity-list activity-list--catalog">
+                {visibleBrands.map((item) => (
+                  <li key={item.id}>
+                    <div className="catalog-admin-card__head">
+                      <strong>{item.nombre}</strong>
+                      <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                        {item.activo ? "Activa" : "Inactiva"}
+                      </span>
+                    </div>
+                    <span>{item.descripcion || "Sin descripcion registrada"}</span>
+                    <div className="catalog-admin-card__actions">
+                      <button
+                        className="btn btn-outline"
+                        type="button"
+                        onClick={() =>
+                          setBrandForm({
+                            id: item.id,
+                            nombre: item.nombre,
+                            descripcion: item.descripcion || "",
+                            activo: Boolean(item.activo)
+                          })
+                        }
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-outline btn-danger-lite"
+                        type="button"
+                        onClick={() => deleteBrand(item)}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-state empty-state--catalog">
+                {getCatalogEmptyMessage("marcas", brandQuery)}
+              </div>
+            )}
           </article>
 
           <article className="panel">
@@ -2222,7 +2261,8 @@ function Dashboard() {
               </button>
             </div>
 
-            <ul className="activity-list activity-list--catalog">
+            {visibleProviders.length > 0 ? (
+              <ul className="activity-list activity-list--catalog">
               {visibleProviders.map((item) => (
                 <li key={item.id}>
                   <div className="catalog-admin-card__head">
@@ -2233,6 +2273,9 @@ function Dashboard() {
                   </div>
                   <span className="catalog-admin-card__meta">
                     {item.nit ? `NIT ${item.nit}` : "Sin NIT"} • {item.email || "Sin correo"} • {item.telefono || "Sin telefono"}
+                  </span>
+                  <span className="catalog-admin-card__meta-clean">
+                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} - {item.email || "Sin correo"} - {item.telefono || "Sin telefono"}
                   </span>
                   <span>{item.direccion || "Sin direccion registrada"}</span>
                   <div className="catalog-admin-card__actions">
@@ -2270,7 +2313,12 @@ function Dashboard() {
                   </div>
                 </li>
               ))}
-            </ul>
+              </ul>
+            ) : (
+              <div className="empty-state empty-state--catalog">
+                {getCatalogEmptyMessage("proveedores", providerQuery)}
+              </div>
+            )}
           </article>
         </section>
       ) : null}

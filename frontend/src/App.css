@@ -728,6 +728,10 @@ button {
   gap: 12px;
 }
 
+.form-grid .form-actions {
+  margin-top: 8px;
+}
+
 .form-note {
   margin-top: -4px;
   color: var(--muted);
@@ -737,9 +741,9 @@ button {
 .filter-toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 12px;
-  margin-bottom: 14px;
+  gap: 14px;
+  margin-top: 18px;
+  margin-bottom: 18px;
 }
 
 .filter-toolbar .search-input {
@@ -1032,6 +1036,11 @@ button {
   box-shadow: var(--soft-shadow);
 }
 
+.activity-list--catalog {
+  gap: 16px;
+  margin-top: 8px;
+}
+
 .catalog-admin-card__head {
   display: flex;
   align-items: center;
@@ -1045,14 +1054,24 @@ button {
 }
 
 .catalog-admin-card__meta {
+  display: none;
   font-size: 0.95rem;
+}
+
+.catalog-admin-card__meta-clean {
+  font-size: 0.95rem;
+  color: var(--muted);
 }
 
 .catalog-admin-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 8px;
+}
+
+.empty-state--catalog {
+  margin-top: 8px;
 }
 
 .status-chip {

@@ -184,6 +184,32 @@ function getSuggestedMarginForCategoryId(categoryId, categorias = []) {
   return String(suggestedMargin);
 }
 
+function buildProductOptionLabel(item, options = {}) {
+  if (!item) {
+    return "-";
+  }
+
+  const { includeStock = false, includeProvider = false } = options;
+  const descriptors = [item.categoria, item.marca];
+
+  if (includeProvider && item.proveedor) {
+    descriptors.push(item.proveedor);
+  }
+
+  const parts = [item.nombre];
+  const descriptorText = descriptors.filter(Boolean).join(" · ");
+
+  if (descriptorText) {
+    parts.push(descriptorText);
+  }
+
+  if (includeStock) {
+    parts.push(`stock ${Number(item.stock || 0)}`);
+  }
+
+  return parts.join(" - ");
+}
+
 function buildPurchaseReportPath(filters = {}) {
   const params = new URLSearchParams();
 
@@ -470,6 +496,38 @@ function Dashboard() {
       )
     );
   }, [catalogos.proveedores, providerQuery]);
+
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((left, right) => {
+      const byName = String(left.nombre || "").localeCompare(String(right.nombre || ""), "es", {
+        sensitivity: "base"
+      });
+
+      if (byName !== 0) {
+        return byName;
+      }
+
+      const byBrand = String(left.marca || "").localeCompare(String(right.marca || ""), "es", {
+        sensitivity: "base"
+      });
+
+      if (byBrand !== 0) {
+        return byBrand;
+      }
+
+      return Number(left.id || 0) - Number(right.id || 0);
+    });
+  }, [products]);
+
+  const productsById = useMemo(
+    () => Object.fromEntries(products.map((item) => [String(item.id), item])),
+    [products]
+  );
+
+  const selectedPurchaseProduct = useMemo(
+    () => sortedProducts.find((item) => String(item.id) === String(purchaseForm.producto_id)) || null,
+    [purchaseForm.producto_id, sortedProducts]
+  );
 
   const pendingOrdersCount = useMemo(
     () => orders.filter((order) => order.estado === "pendiente").length,
@@ -1533,7 +1591,7 @@ function Dashboard() {
                 onChange={handleProductChange}
                 placeholder="URL imagen opcional; si no la pones se genera una ilustracion automatica"
               />
-              <div className="form-actions">
+              <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {productForm.id ? "Actualizar producto" : "Crear producto"}
                 </button>
@@ -1558,7 +1616,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="filter-toolbar">
+            <div className="filter-toolbar filter-toolbar--catalog">
               <input
                 className="search-input"
                 value={productQuery}
@@ -1651,7 +1709,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <form className="form-grid" onSubmit={submitPurchase}>
+            <form className="form-grid form-grid--spacious" onSubmit={submitPurchase}>
               <select
                 name="producto_id"
                 value={purchaseForm.producto_id}
@@ -1659,9 +1717,9 @@ function Dashboard() {
                 required
               >
                 <option value="">Producto a comprar</option>
-                {products.map((item) => (
+                {sortedProducts.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.nombre} - stock {item.stock}
+                    {buildProductOptionLabel(item, { includeStock: true })}
                   </option>
                 ))}
               </select>
@@ -1707,9 +1765,31 @@ function Dashboard() {
                 placeholder="Factura o referencia de compra"
               />
 
-              <button className="btn btn-secondary" type="submit">
-                Registrar compra
-              </button>
+              {selectedPurchaseProduct ? (
+                <div className="admin-inline-summary">
+                  <strong>{selectedPurchaseProduct.nombre}</strong>
+                  <span>
+                    {[
+                      selectedPurchaseProduct.categoria || "Sin categoria",
+                      selectedPurchaseProduct.marca || "Sin marca",
+                      `stock ${Number(selectedPurchaseProduct.stock || 0)}`
+                    ].join(" - ")}
+                  </span>
+                  <small>
+                    Margen actual: {Number(selectedPurchaseProduct.margen_porcentaje || 0).toFixed(1)}% - Precio de
+                    venta: {formatCatalogPrice(selectedPurchaseProduct.precio_detal)}
+                  </small>
+                </div>
+              ) : null}
+
+              <div className="form-actions form-actions--stacked">
+                <button className="btn btn-secondary" type="submit">
+                  Registrar compra
+                </button>
+                <p className="form-note form-note--block">
+                  Usa producto, proveedor y factura para dejar el kardex y el informe bien trazados.
+                </p>
+              </div>
             </form>
 
             {lastPurchaseTicket ? (
@@ -1727,7 +1807,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <form className="form-grid" onSubmit={(event) => event.preventDefault()}>
+            <form className="filter-toolbar filter-toolbar--report" onSubmit={(event) => event.preventDefault()}>
               <input
                 name="fecha_desde"
                 type="date"
@@ -1748,9 +1828,9 @@ function Dashboard() {
                 onChange={handlePurchaseFilterChange}
               >
                 <option value="">Todos los productos</option>
-                {products.map((item) => (
+                {sortedProducts.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.nombre}
+                    {buildProductOptionLabel(item)}
                   </option>
                 ))}
               </select>
@@ -1793,7 +1873,7 @@ function Dashboard() {
                       <tr key={item.id}>
                         <td>{formatDateTime(item.fecha)}</td>
                         <td>{item.factura_referencia || "Sin factura"}</td>
-                        <td>{item.producto}</td>
+                        <td>{productsById[String(item.producto_id)] ? buildProductOptionLabel(productsById[String(item.producto_id)]) : item.producto}</td>
                         <td>{item.proveedor || "-"}</td>
                         <td>{item.cantidad}</td>
                         <td>{formatCurrency(item.costo_unitario)}</td>
@@ -1832,7 +1912,7 @@ function Dashboard() {
                       {purchaseReport.por_producto.length > 0 ? (
                         purchaseReport.por_producto.map((item) => (
                           <tr key={item.producto_id}>
-                            <td>{item.producto}</td>
+                            <td>{productsById[String(item.producto_id)] ? buildProductOptionLabel(productsById[String(item.producto_id)]) : item.producto}</td>
                             <td>{item.compras_registradas}</td>
                             <td>{item.unidades}</td>
                             <td>{formatCurrency(item.total_invertido)}</td>
@@ -1959,7 +2039,7 @@ function Dashboard() {
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
               </select>
-              <div className="form-actions">
+              <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {userForm.id ? "Actualizar usuario" : "Crear usuario"}
                 </button>
@@ -1984,7 +2064,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="filter-toolbar">
+            <div className="filter-toolbar filter-toolbar--catalog">
               <input
                 className="search-input"
                 value={userQuery}
@@ -2053,7 +2133,7 @@ function Dashboard() {
                 <option value="true">Activa</option>
                 <option value="false">Inactiva</option>
               </select>
-              <div className="form-actions">
+              <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {categoryForm.id ? "Actualizar categoria" : "Crear categoria"}
                 </button>
@@ -2065,7 +2145,7 @@ function Dashboard() {
               </div>
             </form>
 
-            <div className="filter-toolbar">
+            <div className="filter-toolbar filter-toolbar--catalog">
               <input
                 className="search-input"
                 value={categoryQuery}
@@ -2141,7 +2221,7 @@ function Dashboard() {
                 <option value="true">Activa</option>
                 <option value="false">Inactiva</option>
               </select>
-              <div className="form-actions">
+              <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {brandForm.id ? "Actualizar marca" : "Crear marca"}
                 </button>
@@ -2153,7 +2233,7 @@ function Dashboard() {
               </div>
             </form>
 
-            <div className="filter-toolbar">
+            <div className="filter-toolbar filter-toolbar--catalog">
               <input
                 className="search-input"
                 value={brandQuery}
@@ -2244,7 +2324,7 @@ function Dashboard() {
               </div>
             </form>
 
-            <div className="filter-toolbar">
+            <div className="filter-toolbar filter-toolbar--catalog">
               <input
                 className="search-input"
                 value={providerQuery}

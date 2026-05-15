@@ -28,6 +28,20 @@ function buildInitialQuantities(order) {
   );
 }
 
+function summarizeSelectedOrder(order) {
+  if (!order) {
+    return null;
+  }
+
+  const productos = order.productos || [];
+
+  return {
+    totalItems: productos.length,
+    totalVendidas: productos.reduce((acc, item) => acc + Number(item.cantidad_pedida || 0), 0),
+    totalDisponibles: productos.reduce((acc, item) => acc + Number(item.cantidad_disponible_devolucion || 0), 0)
+  };
+}
+
 function ReturnsManager({ token, title, subtitle, onAfterSubmit }) {
   const [eligibleOrders, setEligibleOrders] = useState([]);
   const [returns, setReturns] = useState([]);
@@ -67,6 +81,11 @@ function ReturnsManager({ token, title, subtitle, onAfterSubmit }) {
   const selectedOrder = useMemo(
     () => eligibleOrders.find((order) => String(order.id) === String(selectedOrderId)) || null,
     [eligibleOrders, selectedOrderId]
+  );
+
+  const selectedOrderSummary = useMemo(
+    () => summarizeSelectedOrder(selectedOrder),
+    [selectedOrder]
   );
 
   useEffect(() => {
@@ -160,7 +179,7 @@ function ReturnsManager({ token, title, subtitle, onAfterSubmit }) {
         {error ? <p className="message error">{error}</p> : null}
         {success ? <p className="message success">{success}</p> : null}
 
-        <form className="form-grid" onSubmit={handleSubmit}>
+        <form className="form-grid form-grid--spacious" onSubmit={handleSubmit}>
           <select
             value={selectedOrderId}
             onChange={(event) => setSelectedOrderId(event.target.value)}
@@ -189,43 +208,72 @@ function ReturnsManager({ token, title, subtitle, onAfterSubmit }) {
           />
 
           {selectedOrder ? (
-            <div className="returns-product-grid">
-              {selectedOrder.productos.map((item) => (
-                <article key={item.detalle_pedido_id} className="returns-product-card">
-                  <div className="returns-product-card__copy">
-                    <strong>{item.nombre}</strong>
-                    <span>{item.categoria || "Sin categoria"}</span>
-                  </div>
+            <div className="returns-section">
+              <article className="returns-order-summary">
+                <div className="returns-order-summary__copy">
+                  <strong>Pedido #{selectedOrder.id}</strong>
+                  <span>
+                    {selectedOrder.cliente} - {selectedOrder.estado} - {formatDate(selectedOrder.fecha)}
+                  </span>
+                </div>
+                <div className="returns-order-summary__stats">
+                  <small>{selectedOrderSummary?.totalItems || 0} productos</small>
+                  <small>{selectedOrderSummary?.totalVendidas || 0} unidades vendidas</small>
+                  <small>{selectedOrderSummary?.totalDisponibles || 0} unidades disponibles</small>
+                </div>
+              </article>
 
-                  <div className="returns-product-card__meta">
-                    <small>Vendidas: {item.cantidad_pedida}</small>
-                    <small>Devueltas: {item.cantidad_devuelta}</small>
-                    <small>Disponibles: {item.cantidad_disponible_devolucion}</small>
-                    <small>{formatCurrency(item.precio_unitario)} c/u</small>
-                  </div>
+              <div className="returns-section__header">
+                <strong>Items elegibles para devolver</strong>
+                <span>Indica solo las unidades disponibles para cada producto y luego registra la devolucion.</span>
+              </div>
 
-                  <input
-                    type="number"
-                    min="0"
-                    max={item.cantidad_disponible_devolucion}
-                    value={quantities[item.detalle_pedido_id] ?? ""}
-                    onChange={(event) =>
-                      handleQuantityChange(item.detalle_pedido_id, event.target.value)
-                    }
-                    placeholder="Cantidad a devolver"
-                  />
-                </article>
-              ))}
+              <div className="returns-product-grid">
+                {selectedOrder.productos.map((item) => (
+                  <article key={item.detalle_pedido_id} className="returns-product-card">
+                    <div className="returns-product-card__copy">
+                      <strong>{item.nombre}</strong>
+                      <span>{item.categoria || "Sin categoria"}</span>
+                    </div>
+
+                    <div className="returns-product-card__meta">
+                      <small>Vendidas: {item.cantidad_pedida}</small>
+                      <small>Devueltas: {item.cantidad_devuelta}</small>
+                      <small>Disponibles: {item.cantidad_disponible_devolucion}</small>
+                      <small>{formatCurrency(item.precio_unitario)} c/u</small>
+                    </div>
+
+                    <label className="returns-product-card__field">
+                      <span>Cantidad a devolver</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={item.cantidad_disponible_devolucion}
+                        value={quantities[item.detalle_pedido_id] ?? ""}
+                        onChange={(event) =>
+                          handleQuantityChange(item.detalle_pedido_id, event.target.value)
+                        }
+                        placeholder="0"
+                      />
+                    </label>
+                  </article>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="returns-empty">
-              <p>Selecciona un pedido para ver las cantidades disponibles para devolver.</p>
+              <p>Selecciona un pedido entregado para ver sus items y las cantidades disponibles para devolver.</p>
             </div>
           )}
 
-          <button className="btn btn-secondary" type="submit" disabled={submitting || loading}>
-            {submitting ? "Registrando devolucion..." : "Registrar devolucion"}
-          </button>
+          <div className="form-actions form-actions--stacked">
+            <button className="btn btn-secondary" type="submit" disabled={submitting || loading}>
+              {submitting ? "Registrando devolucion..." : "Registrar devolucion"}
+            </button>
+            <p className="form-note form-note--block">
+              La devolucion reintegra el stock al kardex y deja una tirilla para seguimiento.
+            </p>
+          </div>
         </form>
 
         {lastTicket ? (

@@ -540,22 +540,26 @@ function Dashboard() {
       {
         id: "registros",
         label: "Compras registradas",
-        value: Number(resumen.total_registros || 0)
+        value: Number(resumen.total_registros || 0),
+        tone: "neutral"
       },
       {
         id: "unidades",
         label: "Unidades compradas",
-        value: Number(resumen.total_unidades || 0)
+        value: Number(resumen.total_unidades || 0),
+        tone: "neutral"
       },
       {
         id: "invertido",
         label: "Total invertido",
-        value: formatCurrency(resumen.total_invertido || 0)
+        value: formatCurrency(resumen.total_invertido || 0),
+        tone: "warning"
       },
       {
         id: "facturas",
         label: "Facturas encontradas",
-        value: Number(resumen.total_facturas || 0)
+        value: Number(resumen.total_facturas || 0),
+        tone: Number(resumen.total_facturas || 0) > 0 ? "positive" : "negative"
       }
     ];
   }, [purchaseReport]);
@@ -1845,9 +1849,9 @@ function Dashboard() {
               </button>
             </form>
 
-            <div className="stats-grid">
+            <div className="stats-grid stats-grid--report stats-grid--compact">
               {purchaseReportCards.map((card) => (
-                <article key={card.id} className="stat-card">
+                <article key={card.id} className={`stat-card stat-card--${card.tone}`}>
                   <strong>{card.value}</strong>
                   <span>{card.label}</span>
                 </article>

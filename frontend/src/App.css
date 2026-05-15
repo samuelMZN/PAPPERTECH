@@ -393,6 +393,11 @@ button {
   width: min(100%, 1180px);
 }
 
+.stats-grid--compact {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  width: 100%;
+}
+
 .stat-card {
   display: grid;
   align-content: end;
@@ -430,6 +435,11 @@ button {
 
 .stats-grid--report .stat-card strong {
   color: var(--ink);
+}
+
+.stats-grid--compact .stat-card {
+  min-height: 122px;
+  padding: 22px;
 }
 
 .stats-grid--report .stat-card span,

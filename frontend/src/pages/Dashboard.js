@@ -541,25 +541,32 @@ function Dashboard() {
         id: "registros",
         label: "Compras registradas",
         value: Number(resumen.total_registros || 0),
+        note: "Movimientos de compra detectados",
         tone: "neutral"
       },
       {
         id: "unidades",
         label: "Unidades compradas",
         value: Number(resumen.total_unidades || 0),
+        note: "Total de unidades ingresadas",
         tone: "neutral"
       },
       {
         id: "invertido",
         label: "Total invertido",
         value: formatCurrency(resumen.total_invertido || 0),
+        note: "Costo acumulado en compras filtradas",
         tone: "warning"
       },
       {
         id: "facturas",
         label: "Facturas encontradas",
         value: Number(resumen.total_facturas || 0),
-        tone: Number(resumen.total_facturas || 0) > 0 ? "positive" : "negative"
+        note:
+          Number(resumen.total_facturas || 0) > 0
+            ? "Referencias o facturas detectadas"
+            : "Sin facturas registradas en el filtro",
+        tone: "neutral"
       }
     ];
   }, [purchaseReport]);
@@ -1803,7 +1810,7 @@ function Dashboard() {
             ) : null}
           </article>
 
-          <article className="panel">
+          <article className="panel panel--purchase-report">
             <div className="panel-header">
               <div>
                 <h2>Informe de compras</h2>
@@ -1811,55 +1818,70 @@ function Dashboard() {
               </div>
             </div>
 
-            <form className="filter-toolbar filter-toolbar--report" onSubmit={(event) => event.preventDefault()}>
-              <input
-                name="fecha_desde"
-                type="date"
-                value={purchaseFilters.fecha_desde}
-                onChange={handlePurchaseFilterChange}
-                placeholder="Desde"
-              />
-              <input
-                name="fecha_hasta"
-                type="date"
-                value={purchaseFilters.fecha_hasta}
-                onChange={handlePurchaseFilterChange}
-                placeholder="Hasta"
-              />
-              <select
-                name="producto_id"
-                value={purchaseFilters.producto_id}
-                onChange={handlePurchaseFilterChange}
-              >
-                <option value="">Todos los productos</option>
-                {sortedProducts.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {buildProductOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
-              <input
-                name="factura"
-                value={purchaseFilters.factura}
-                onChange={handlePurchaseFilterChange}
-                placeholder="Buscar por factura"
-              />
-              <button className="btn btn-outline" type="button" onClick={clearPurchaseFilters}>
-                Limpiar filtros
-              </button>
+            <form className="filter-toolbar filter-toolbar--report purchase-report-filters" onSubmit={(event) => event.preventDefault()}>
+              <label className="form-field-group">
+                <span>Desde</span>
+                <input
+                  name="fecha_desde"
+                  type="date"
+                  value={purchaseFilters.fecha_desde}
+                  onChange={handlePurchaseFilterChange}
+                  placeholder="Desde"
+                />
+              </label>
+              <label className="form-field-group">
+                <span>Hasta</span>
+                <input
+                  name="fecha_hasta"
+                  type="date"
+                  value={purchaseFilters.fecha_hasta}
+                  onChange={handlePurchaseFilterChange}
+                  placeholder="Hasta"
+                />
+              </label>
+              <label className="form-field-group">
+                <span>Producto</span>
+                <select
+                  name="producto_id"
+                  value={purchaseFilters.producto_id}
+                  onChange={handlePurchaseFilterChange}
+                >
+                  <option value="">Todos los productos</option>
+                  {sortedProducts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {buildProductOptionLabel(item)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-field-group">
+                <span>Factura</span>
+                <input
+                  name="factura"
+                  value={purchaseFilters.factura}
+                  onChange={handlePurchaseFilterChange}
+                  placeholder="Buscar por factura"
+                />
+              </label>
+              <div className="purchase-report-filters__action">
+                <button className="btn btn-outline" type="button" onClick={clearPurchaseFilters}>
+                  Limpiar filtros
+                </button>
+              </div>
             </form>
 
-            <div className="stats-grid stats-grid--report stats-grid--compact">
+            <div className="stats-grid stats-grid--report stats-grid--compact stats-grid--purchase">
               {purchaseReportCards.map((card) => (
                 <article key={card.id} className={`stat-card stat-card--${card.tone}`}>
+                  <small className="stat-card__label">{card.label}</small>
                   <strong>{card.value}</strong>
-                  <span>{card.label}</span>
+                  <span>{card.note}</span>
                 </article>
               ))}
             </div>
 
-            <div className="table-wrap">
-              <table className="data-table">
+            <div className="table-wrap table-wrap--report">
+              <table className="data-table data-table--report">
                 <thead>
                   <tr>
                     <th>Fecha</th>

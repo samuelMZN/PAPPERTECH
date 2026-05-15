@@ -442,6 +442,25 @@ button {
   padding: 22px;
 }
 
+.stats-grid--purchase {
+  margin-top: 8px;
+}
+
+.stats-grid--purchase .stat-card {
+  min-height: 138px;
+  gap: 10px;
+  align-content: center;
+}
+
+.stats-grid--purchase .stat-card strong {
+  font-size: clamp(2rem, 3vw, 2.9rem);
+  line-height: 1;
+}
+
+.stats-grid--purchase .stat-card span {
+  line-height: 1.55;
+}
+
 .stats-grid--report .stat-card span,
 .stats-grid--report .stat-card small {
   color: var(--muted);
@@ -482,6 +501,10 @@ button {
 .panel-header h2 {
   margin: 0;
   color: var(--ink);
+}
+
+.panel--purchase-report .panel-header {
+  margin-bottom: 22px;
 }
 
 .admin-report {
@@ -757,6 +780,20 @@ button {
   line-height: 1.6;
 }
 
+.form-field-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-field-group span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .filter-toolbar {
   display: flex;
   align-items: center;
@@ -786,6 +823,18 @@ button {
 
 .filter-toolbar--report .btn {
   width: 100%;
+}
+
+.purchase-report-filters {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.purchase-report-filters__action {
+  display: flex;
+  align-items: end;
 }
 
 .section-tabs {
@@ -1029,10 +1078,19 @@ button {
   width: 100%;
 }
 
+.table-wrap--report {
+  margin-top: 18px;
+  padding: 12px 0 2px;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
+}
+
+.data-table--report {
+  min-width: 940px;
 }
 
 .data-table th,
@@ -1051,6 +1109,23 @@ button {
   font-size: 0.86rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.data-table--report th {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.data-table--report td {
+  line-height: 1.55;
+}
+
+.data-table--report td:nth-child(3) {
+  min-width: 210px;
+}
+
+.data-table--report td:nth-child(4) {
+  min-width: 150px;
 }
 
 .data-table .table-actions {
@@ -2320,6 +2395,10 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .purchase-report-filters__action {
+    grid-column: 1 / -1;
+  }
+
   .admin-report__metrics,
   .admin-report__details,
   .admin-report__tables,
@@ -2383,6 +2462,10 @@ button {
 
   .returns-order-summary {
     flex-direction: column;
+  }
+
+  .purchase-report-filters {
+    padding: 16px;
   }
 
   .category-grid {

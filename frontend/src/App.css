@@ -1046,10 +1046,11 @@ button {
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--danger) 76%, var(--surface));
+  background: #d94b58;
   color: #ffffff;
   font-size: 0.76rem;
   font-weight: 700;
+  border: 1px solid #ef7a86;
 }
 
 .section-tabs--sidebar .section-tab {

@@ -145,7 +145,7 @@ function Navbar() {
               <Link className="topbar-link-with-badge" to="/dashboard" onClick={closeMenu}>
                 <span>Dashboard</span>
                 {pendingOrdersCount > 0 ? (
-                  <span className="topbar-link__badge topbar-link__badge--orders">{pendingOrdersCount}</span>
+                  <span className="section-tab__badge topbar-link__badge">{pendingOrdersCount}</span>
                 ) : null}
               </Link>
             ) : null}
@@ -158,14 +158,14 @@ function Navbar() {
               <Link className="topbar-link-with-badge" to="/panel" onClick={closeMenu}>
                 <span>Mi cuenta</span>
                 {pendingOrdersCount > 0 ? (
-                  <span className="topbar-link__badge topbar-link__badge--orders">{pendingOrdersCount}</span>
+                  <span className="section-tab__badge topbar-link__badge">{pendingOrdersCount}</span>
                 ) : null}
               </Link>
             ) : null}
             {isClient ? (
               <Link className="cart-link" to="/carrito" onClick={closeMenu}>
                 <span>Carrito</span>
-                <span className="cart-count">{cartCount}</span>
+                <span className="section-tab__badge cart-count">{cartCount}</span>
               </Link>
             ) : null}
             <span className="user-chip">

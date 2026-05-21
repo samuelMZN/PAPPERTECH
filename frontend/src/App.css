@@ -256,37 +256,9 @@ button {
   box-shadow: var(--soft-shadow);
 }
 
-.cart-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: #d94b58;
-  border: 1px solid #ef7a86;
-  color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
+.cart-count,
 .topbar-link__badge {
   flex-shrink: 0;
-}
-
-.topbar-link__badge--orders {
-  display: inline-grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: #d94b58;
-  border: 1px solid #ef7a86;
-  color: #ffffff;
-  font-size: 0.76rem;
-  font-weight: 700;
-  line-height: 1;
 }
 
 .btn {

@@ -149,6 +149,10 @@ function getTopSoldItems(items, limit = 4) {
     .slice(0, limit);
 }
 
+function hasAvailableStock(producto) {
+  return Number(producto?.stock || 0) > 0;
+}
+
 function Home() {
   const { isAuthenticated, isClient, isAdministrator, isWorker } = useAuth();
   const { addToCart } = useCart();
@@ -186,9 +190,12 @@ function Home() {
         }
 
         const categoriasActivas = catalogData.categorias || [];
+        const productosDisponibles = normalizeStorefrontProducts(productsData, categoriasActivas).filter(
+          hasAvailableStock
+        );
 
         setCategorias(categoriasActivas);
-        setProductos(normalizeStorefrontProducts(productsData, categoriasActivas));
+        setProductos(productosDisponibles);
       } catch (requestError) {
         if (active) {
           setError(requestError.message);
@@ -276,11 +283,7 @@ function Home() {
           return false;
         }
 
-        if (stockFilter === "disponibles" && Number(producto.stock || 0) <= 0) {
-          return false;
-        }
-
-        if (stockFilter === "agotados" && Number(producto.stock || 0) > 0) {
+        if (stockFilter === "disponibles" && !hasAvailableStock(producto)) {
           return false;
         }
 
@@ -496,9 +499,8 @@ function Home() {
             </select>
 
             <select value={stockFilter} onChange={(event) => setStockFilter(event.target.value)}>
-              <option value="all">Todo el stock</option>
-              <option value="disponibles">Solo disponibles</option>
-              <option value="agotados">Solo agotados</option>
+              <option value="all">Con stock</option>
+              <option value="disponibles">Stock inmediato</option>
             </select>
 
             <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>

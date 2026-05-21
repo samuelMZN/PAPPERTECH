@@ -15,6 +15,7 @@ function Navbar() {
   const headerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const shouldShowPendingOrders = isAuthenticated && (isAdministrator || isWorker || isClient);
 
   useEffect(() => {
     const updateHeaderHeight = () => {
@@ -53,7 +54,7 @@ function Navbar() {
     let intervalId;
 
     async function loadPendingOrders() {
-      if (!token || !isClient) {
+      if (!token || !shouldShowPendingOrders) {
         if (active) {
           setPendingOrdersCount(0);
         }
@@ -79,7 +80,7 @@ function Navbar() {
 
     loadPendingOrders();
 
-    if (token && isClient) {
+    if (token && shouldShowPendingOrders) {
       intervalId = window.setInterval(loadPendingOrders, 20000);
     }
 
@@ -90,7 +91,7 @@ function Navbar() {
         window.clearInterval(intervalId);
       }
     };
-  }, [isClient, token, location.pathname]);
+  }, [location.pathname, shouldShowPendingOrders, token]);
 
   const handleLogout = () => {
     setMenuOpen(false);
@@ -137,8 +138,11 @@ function Navbar() {
         {isAuthenticated ? (
           <>
             {isAdministrator ? (
-              <Link to="/dashboard" onClick={closeMenu}>
-                Dashboard
+              <Link className="topbar-link-with-badge" to="/dashboard" onClick={closeMenu}>
+                <span>Dashboard</span>
+                {pendingOrdersCount > 0 ? (
+                  <span className="topbar-link__badge">{pendingOrdersCount}</span>
+                ) : null}
               </Link>
             ) : null}
             {isWorker ? (

@@ -842,15 +842,90 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   gap: 16px 18px;
-  margin-top: 22px;
+  margin-top: 0;
   margin-bottom: 24px;
 }
 
 .purchase-report-filters {
-  padding: 18px;
+  padding: 22px;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 92%, transparent), color-mix(in srgb, var(--surface) 94%, transparent)),
+    radial-gradient(circle at top right, rgba(79, 166, 255, 0.08), transparent 28%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.purchase-report-filters__intro,
+.purchase-report-filters__tags,
+.purchase-report-filters__action {
+  grid-column: 1 / -1;
+}
+
+.purchase-report-filters__intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 2px;
+}
+
+.purchase-report-filters__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.purchase-report-filters__eyebrow {
+  margin: 0;
+}
+
+.purchase-report-filters__copy p {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.purchase-report-filters__meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.purchase-report-filters__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 64%, transparent);
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.purchase-report-filters__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.purchase-report-filters__tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.35;
 }
 
 .purchase-report-filters .form-field-group {
@@ -864,6 +939,7 @@ button {
   -webkit-appearance: none;
   background-color: var(--surface);
   background-clip: padding-box;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .purchase-report-filters__field select {
@@ -890,15 +966,16 @@ button {
 
 .purchase-report-filters__action {
   display: flex;
-  grid-column: 1 / -1;
   align-items: center;
-  justify-content: flex-start;
-  padding-top: 2px;
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
 }
 
 .purchase-report-filters__action .btn {
   width: auto;
   min-width: 196px;
+  padding-inline: 20px;
 }
 
 .section-tabs {
@@ -2459,6 +2536,15 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .purchase-report-filters__intro {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .purchase-report-filters__meta {
+    justify-content: flex-start;
+  }
+
   .purchase-report-filters__action {
     grid-column: 1 / -1;
     justify-content: flex-start;
@@ -2523,6 +2609,15 @@ button {
 
   .filter-toolbar--report {
     grid-template-columns: 1fr;
+  }
+
+  .purchase-report-filters__tags {
+    gap: 8px;
+  }
+
+  .purchase-report-filters__tag {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .returns-order-summary {

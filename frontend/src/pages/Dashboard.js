@@ -570,6 +570,30 @@ function Dashboard() {
       }
     ];
   }, [purchaseReport]);
+  const activePurchaseFilterCount = useMemo(
+    () => Object.values(purchaseFilters).filter((value) => String(value || "").trim() !== "").length,
+    [purchaseFilters]
+  );
+  const purchaseFilterTags = useMemo(() => {
+    const tags = [];
+
+    if (purchaseFilters.fecha_desde || purchaseFilters.fecha_hasta) {
+      const desde = purchaseFilters.fecha_desde || "inicio";
+      const hasta = purchaseFilters.fecha_hasta || "hoy";
+      tags.push(`Periodo: ${desde} - ${hasta}`);
+    }
+
+    if (purchaseFilters.producto_id) {
+      const selectedProduct = productsById[String(purchaseFilters.producto_id)];
+      tags.push(selectedProduct ? `Producto: ${selectedProduct.nombre}` : "Producto seleccionado");
+    }
+
+    if (purchaseFilters.factura) {
+      tags.push(`Factura: ${purchaseFilters.factura}`);
+    }
+
+    return tags;
+  }, [productsById, purchaseFilters]);
   const printableOrderTickets = useMemo(
     () =>
       orders
@@ -1819,7 +1843,27 @@ function Dashboard() {
             </div>
 
             <form className="filter-toolbar filter-toolbar--report purchase-report-filters" onSubmit={(event) => event.preventDefault()}>
-              <label className="form-field-group">
+              <div className="purchase-report-filters__intro">
+                <div className="purchase-report-filters__copy">
+                  <span className="eyebrow purchase-report-filters__eyebrow">Filtros del informe</span>
+                  <p>Afina el reporte por periodo, producto o referencia para revisar compras concretas sin perder contexto.</p>
+                </div>
+                <div className="purchase-report-filters__meta">
+                  <span className="purchase-report-filters__badge">
+                    {activePurchaseFilterCount} {activePurchaseFilterCount === 1 ? "activo" : "activos"}
+                  </span>
+                </div>
+              </div>
+              {purchaseFilterTags.length ? (
+                <div className="purchase-report-filters__tags" aria-label="Resumen de filtros activos">
+                  {purchaseFilterTags.map((tag) => (
+                    <span key={tag} className="purchase-report-filters__tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--date">
                 <span>Desde</span>
                 <input
                   name="fecha_desde"
@@ -1829,7 +1873,7 @@ function Dashboard() {
                   placeholder="Desde"
                 />
               </label>
-              <label className="form-field-group">
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--date">
                 <span>Hasta</span>
                 <input
                   name="fecha_hasta"
@@ -1839,7 +1883,7 @@ function Dashboard() {
                   placeholder="Hasta"
                 />
               </label>
-              <label className="form-field-group">
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--product">
                 <span>Producto</span>
                 <select
                   name="producto_id"
@@ -1854,7 +1898,7 @@ function Dashboard() {
                   ))}
                 </select>
               </label>
-              <label className="form-field-group">
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--invoice">
                 <span>Factura</span>
                 <input
                   name="factura"

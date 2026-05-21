@@ -272,14 +272,16 @@ button {
 .topbar-link__badge {
   display: inline-grid;
   place-items: center;
-  min-width: 24px;
-  height: 24px;
+  min-width: 22px;
+  height: 22px;
   padding: 0 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--danger) 76%, var(--surface));
-  color: #f7fbff;
-  font-size: 0.82rem;
+  color: #ffffff;
+  font-size: 0.76rem;
   font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--danger) 58%, transparent);
+  box-shadow: none;
 }
 
 .btn {

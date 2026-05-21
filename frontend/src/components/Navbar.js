@@ -68,8 +68,12 @@ function Navbar() {
           return;
         }
 
+        const visibleStatuses = isClient
+          ? new Set(["pendiente", "en_preparacion"])
+          : new Set(["pendiente"]);
+
         setPendingOrdersCount(
-          orders.filter((order) => String(order.estado || "").toLowerCase() === "pendiente").length
+          orders.filter((order) => visibleStatuses.has(String(order.estado || "").toLowerCase())).length
         );
       } catch (_error) {
         if (active) {
@@ -91,7 +95,7 @@ function Navbar() {
         window.clearInterval(intervalId);
       }
     };
-  }, [location.pathname, shouldShowPendingOrders, token]);
+  }, [isClient, location.pathname, shouldShowPendingOrders, token]);
 
   const handleLogout = () => {
     setMenuOpen(false);

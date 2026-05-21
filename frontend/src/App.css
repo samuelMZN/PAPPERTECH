@@ -273,6 +273,21 @@ button {
   flex-shrink: 0;
 }
 
+.topbar-link__badge--orders {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #d94b58;
+  border: 1px solid #ef7a86;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

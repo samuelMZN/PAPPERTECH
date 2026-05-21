@@ -263,9 +263,9 @@ button {
   height: 24px;
   padding: 0 6px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #f2a93b, #ffca6b);
-  border: 1px solid rgba(255, 216, 127, 0.7);
-  color: #10233d;
+  background: #d94b58;
+  border: 1px solid #ef7a86;
+  color: #ffffff;
   font-size: 0.82rem;
   font-weight: 700;
 }

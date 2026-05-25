@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import ProductoCard from "../components/ProductoCard";
 import { useAuth } from "../context/AuthContext";
@@ -174,6 +175,7 @@ function Home() {
   const descuentosRef = useRef(null);
   const favoritosRef = useRef(null);
   const vendidosRef = useRef(null);
+  const [topbarSearchTarget, setTopbarSearchTarget] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -212,6 +214,14 @@ function Home() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    setTopbarSearchTarget(document.getElementById("topbar-feature-slot"));
   }, []);
 
   const categoryShowcase = useMemo(
@@ -445,19 +455,29 @@ function Home() {
     handleAddToCart(producto);
   };
 
+  const searchDockSearch = (
+    <>
+      <input
+        className="store-search__input store-search__input--dark-safe"
+        type="search"
+        placeholder="Busca productos, marcas o categorias..."
+        value={busqueda}
+        onChange={(event) => setBusqueda(event.target.value)}
+      />
+      <span className="store-search__count">{productosFiltrados.length} resultados</span>
+    </>
+  );
+
   return (
     <section className="home-page">
+      {topbarSearchTarget
+        ? createPortal(<div className="topbar-search-dock">{searchDockSearch}</div>, topbarSearchTarget)
+        : null}
+
       <section className="search-dock search-dock--top">
         <div className="search-dock__inner">
-          <div className="search-dock__search">
-            <input
-              className="store-search__input store-search__input--dark-safe"
-              type="search"
-              placeholder="Busca productos, marcas o categorias..."
-              value={busqueda}
-              onChange={(event) => setBusqueda(event.target.value)}
-            />
-            <span className="store-search__count">{productosFiltrados.length} resultados</span>
+          <div className="search-dock__search search-dock__search--mobile">
+            {searchDockSearch}
           </div>
 
           <div className="search-dock__filters">

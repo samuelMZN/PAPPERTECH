@@ -130,6 +130,8 @@ function Navbar() {
         </button>
       </div>
 
+      <div className="topbar-feature-slot" id="topbar-feature-slot" />
+
       <nav className={`topbar-links ${menuOpen ? "is-open" : ""}`}>
         <Link to="/" onClick={closeMenu}>
           Inicio

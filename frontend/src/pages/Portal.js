@@ -57,8 +57,8 @@ function getOrderActions(estado) {
 const workerTabs = [
   { id: "pedidos", label: "Pedidos" },
   { id: "devoluciones", label: "Devoluciones" },
-  { id: "inventario", label: "Inventario" },
-  { id: "perfil", label: "Perfil" }
+  { id: "inventario", label: "Compras y stock" },
+  { id: "perfil", label: "Mi perfil" }
 ];
 
 function ClientPortal() {
@@ -521,10 +521,10 @@ function WorkerPortal() {
       <section className="dashboard-hero">
         <div>
           <span className="eyebrow">Portal del trabajador</span>
-          <h1>Operacion diaria de pedidos e inventario.</h1>
+          <h1>Operaciones diarias de pedidos, compras y devoluciones.</h1>
           <p>
-            Desde aqui gestionas pedidos pendientes, actualizas estados y registras
-            movimientos sin tocar el stock de forma directa.
+            Desde aqui gestionas pedidos pendientes, registras compras o ajustes
+            de stock y atiendes devoluciones sin editar el inventario de forma directa.
           </p>
         </div>
 
@@ -540,7 +540,7 @@ function WorkerPortal() {
         </div>
       </section>
 
-      {loading ? <p className="status">Cargando portal operativo...</p> : null}
+      {loading ? <p className="status">Cargando operaciones del trabajador...</p> : null}
       {error ? <p className="message error">{error}</p> : null}
       {success ? <p className="message success">{success}</p> : null}
       {orderNotice ? <p className="message info">{orderNotice}</p> : null}
@@ -570,7 +570,7 @@ function WorkerPortal() {
         <aside className="panel dashboard-sidebar">
           <div className="dashboard-sidebar__header">
             <p className="catalog-section__eyebrow">Modulos</p>
-            <h2>Operacion</h2>
+            <h2>Operaciones</h2>
           </div>
 
           <div className="section-tabs section-tabs--sidebar">
@@ -668,18 +668,18 @@ function WorkerPortal() {
             <article className="panel">
               <div className="panel-header">
                 <div>
-                  <h2>Registrar movimiento</h2>
-                  <p>Entradas por compra a proveedor o salidas manuales de ajuste.</p>
+                  <h2>Registrar compra o ajuste</h2>
+                  <p>Entradas por compra a proveedor y salidas manuales de ajuste.</p>
                 </div>
               </div>
 
               <div className="inventory-callout">
                 <div>
-                  <strong>Inventario perpetuo</strong>
+                  <strong>Stock por movimientos</strong>
                   <span>El stock no se edita a mano. Cada cambio crea un movimiento en el kardex.</span>
                 </div>
                 <div>
-                  <strong>Compra repetida</strong>
+                  <strong>Costo automatico</strong>
                   <span>Si registras una entrada con otro costo, el sistema recalcula el costo promedio del producto.</span>
                 </div>
               </div>

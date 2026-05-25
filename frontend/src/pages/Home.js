@@ -520,13 +520,21 @@ function Home() {
                 <h2 id="cart-confirmation-title">¡Producto agregado al carrito!</h2>
                 <p>No lo dejes escapar</p>
                 <div className="cart-confirmation-card__actions">
-                  <button type="button" className="btn btn-outline" onClick={closeCartDialog}>
+                  <button
+                    type="button"
+                    className="btn btn-outline cart-confirmation-card__button cart-confirmation-card__button--ghost"
+                    onClick={closeCartDialog}
+                  >
                     <span className="cart-confirmation-card__action-icon">＋</span>
                     <span>Seguir comprando</span>
                   </button>
-                  <button type="button" className="btn btn-primary" onClick={openCartPage}>
-                    <span className="cart-confirmation-card__action-icon">🛒</span>
-                    <span>Ver carrito</span>
+                  <button
+                    type="button"
+                    className="btn btn-primary cart-confirmation-card__button cart-confirmation-card__button--primary"
+                    onClick={openCartPage}
+                  >
+                    <span className="cart-confirmation-card__action-icon">→</span>
+                    <span>Ver mi carrito</span>
                   </button>
                 </div>
               </article>

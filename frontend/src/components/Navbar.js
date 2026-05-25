@@ -152,8 +152,11 @@ function Navbar() {
               </Link>
             ) : null}
             {isWorker ? (
-              <Link to="/panel" onClick={closeMenu}>
-                Operaciones
+              <Link className="topbar-link-with-badge" to="/panel" onClick={closeMenu}>
+                <span>Panel trabajador</span>
+                {pendingOrdersCount > 0 ? (
+                  <span className="section-tab__badge topbar-link__badge">{pendingOrdersCount}</span>
+                ) : null}
               </Link>
             ) : null}
             {isClient ? (

@@ -57,8 +57,8 @@ function getOrderActions(estado) {
 const workerTabs = [
   { id: "pedidos", label: "Pedidos" },
   { id: "devoluciones", label: "Devoluciones" },
-  { id: "inventario", label: "Compras y stock" },
-  { id: "perfil", label: "Mi perfil" }
+  { id: "inventario", label: "Compras" },
+  { id: "perfil", label: "Perfil" }
 ];
 
 function ClientPortal() {
@@ -520,8 +520,8 @@ function WorkerPortal() {
     <section className="page-section">
       <section className="dashboard-hero">
         <div>
-          <span className="eyebrow">Portal del trabajador</span>
-          <h1>Operaciones diarias de pedidos, compras y devoluciones.</h1>
+          <span className="eyebrow">Panel del trabajador</span>
+          <h1>Control operativo de pedidos, compras y devoluciones.</h1>
           <p>
             Desde aqui gestionas pedidos pendientes, registras compras o ajustes
             de stock y atiendes devoluciones sin editar el inventario de forma directa.
@@ -570,7 +570,7 @@ function WorkerPortal() {
         <aside className="panel dashboard-sidebar">
           <div className="dashboard-sidebar__header">
             <p className="catalog-section__eyebrow">Modulos</p>
-            <h2>Operaciones</h2>
+            <h2>Panel trabajador</h2>
           </div>
 
           <div className="section-tabs section-tabs--sidebar">

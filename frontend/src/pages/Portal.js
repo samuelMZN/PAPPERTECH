@@ -674,7 +674,7 @@ function WorkerPortal() {
               <div className="panel-header">
                 <div>
                   <h2>Registrar compra</h2>
-                  <p>Usa producto, proveedor y factura para dejar el kardex y el informe bien trazados.</p>
+                  <p>Usa producto, proveedor y documento de compra para dejar el kardex y el informe bien trazados.</p>
                 </div>
               </div>
 
@@ -740,7 +740,7 @@ function WorkerPortal() {
                   name="factura"
                   value={movementForm.factura}
                   onChange={handleMovementChange}
-                  placeholder="Factura o referencia de compra"
+                  placeholder="Documento o referencia del proveedor"
                 />
 
                 <button className="btn btn-secondary" type="submit">
@@ -749,7 +749,7 @@ function WorkerPortal() {
               </form>
 
               <p className="form-helper">
-                Usa producto, proveedor y factura para dejar el kardex y el informe bien trazados.
+                Usa producto, proveedor y documento de compra para dejar el kardex y el informe bien trazados.
               </p>
 
               {lastMovementTicket ? (

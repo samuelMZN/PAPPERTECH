@@ -579,12 +579,12 @@ function Dashboard() {
       },
       {
         id: "facturas",
-        label: "Facturas encontradas",
+        label: "Documentos encontrados",
         value: Number(resumen.total_facturas || 0),
         note:
           Number(resumen.total_facturas || 0) > 0
-            ? "Referencias o facturas detectadas"
-            : "Sin facturas registradas en el filtro",
+            ? "Documentos o referencias detectadas"
+            : "Sin documentos registrados en el filtro",
         tone: "neutral"
       }
     ];
@@ -608,7 +608,7 @@ function Dashboard() {
     }
 
     if (purchaseFilters.factura) {
-      tags.push(`Factura: ${purchaseFilters.factura}`);
+      tags.push(`Documento: ${purchaseFilters.factura}`);
     }
 
     return tags;
@@ -1904,7 +1904,7 @@ function Dashboard() {
                 name="factura"
                 value={purchaseForm.factura}
                 onChange={handlePurchaseChange}
-                placeholder="Factura o referencia de compra"
+                placeholder="Documento o referencia del proveedor"
               />
 
               {selectedPurchaseProduct ? (
@@ -1929,7 +1929,7 @@ function Dashboard() {
                   Registrar compra
                 </button>
                 <p className="form-note form-note--block">
-                  Usa producto, proveedor y factura para dejar el kardex y el informe bien trazados.
+                  Usa producto, proveedor y documento de compra para dejar el kardex y el informe bien trazados.
                 </p>
               </div>
             </form>
@@ -1945,7 +1945,7 @@ function Dashboard() {
             <div className="panel-header">
               <div>
                 <h2>Informe de compras</h2>
-                <p>Consulta compras por fecha, producto y factura con reportes especificos.</p>
+                <p>Consulta compras por fecha, producto y documento de compra con reportes especificos.</p>
               </div>
             </div>
 
@@ -2006,12 +2006,12 @@ function Dashboard() {
                 </select>
               </label>
               <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--invoice">
-                <span>Factura</span>
+                <span>Documento</span>
                 <input
                   name="factura"
                   value={purchaseFilters.factura}
                   onChange={handlePurchaseFilterChange}
-                  placeholder="Buscar por factura"
+                  placeholder="Buscar por documento"
                 />
               </label>
               <div className="purchase-report-filters__action">
@@ -2036,7 +2036,7 @@ function Dashboard() {
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>Factura</th>
+                    <th>Documento</th>
                     <th>Producto</th>
                     <th>Proveedor</th>
                     <th>Cantidad</th>
@@ -2049,7 +2049,7 @@ function Dashboard() {
                     purchaseReport.compras.map((item) => (
                       <tr key={item.id}>
                         <td>{formatDateTime(item.fecha)}</td>
-                        <td>{item.factura_referencia || "Sin factura"}</td>
+                        <td>{item.factura_referencia || "Sin documento"}</td>
                         <td>{productsById[String(item.producto_id)] ? buildProductOptionLabel(productsById[String(item.producto_id)]) : item.producto}</td>
                         <td>{item.proveedor || "-"}</td>
                         <td>{item.cantidad}</td>
@@ -2108,8 +2108,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Reporte por factura</h2>
-                    <p>Agrupa compras por referencia o numero de factura.</p>
+                    <h2>Reporte por documento</h2>
+                    <p>Agrupa compras por referencia o numero de documento del proveedor.</p>
                   </div>
                 </div>
 
@@ -2117,7 +2117,7 @@ function Dashboard() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Factura</th>
+                        <th>Documento</th>
                         <th>Movimientos</th>
                         <th>Unidades</th>
                         <th>Total</th>
@@ -2135,7 +2135,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4">No hay resumen por factura para estos filtros.</td>
+                          <td colSpan="4">No hay resumen por documento para estos filtros.</td>
                         </tr>
                       )}
                     </tbody>

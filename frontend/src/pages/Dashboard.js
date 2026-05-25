@@ -36,20 +36,6 @@ function formatCatalogPrice(value) {
   return Number(value || 0) > 0 ? formatCurrency(value) : "Se calcula con la compra";
 }
 
-function formatValidationToken(value) {
-  const token = String(value || "").trim();
-
-  if (!token) {
-    return "Sin token";
-  }
-
-  if (token.length <= 16) {
-    return token;
-  }
-
-  return `${token.slice(0, 10)}...${token.slice(-6)}`;
-}
-
 function normalizeSearchValue(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -168,6 +154,14 @@ const initialProviderForm = {
   email: "",
   direccion: "",
   activo: true
+};
+
+const initialCrudPanels = {
+  productos: false,
+  usuarios: false,
+  categorias: false,
+  marcas: false,
+  proveedores: false
 };
 
 const DEFAULT_MARGIN_BY_CATEGORY = {
@@ -294,6 +288,7 @@ function Dashboard() {
   const [categoryForm, setCategoryForm] = useState(initialCategoryForm);
   const [brandForm, setBrandForm] = useState(initialBrandForm);
   const [providerForm, setProviderForm] = useState(initialProviderForm);
+  const [crudPanels, setCrudPanels] = useState(initialCrudPanels);
   const [lastPurchaseTicket, setLastPurchaseTicket] = useState(null);
   const [purchaseReport, setPurchaseReport] = useState({
     resumen: {
@@ -703,6 +698,43 @@ function Dashboard() {
     setSuccess("");
   };
 
+  const setCrudPanelOpen = (panelName, isOpen) => {
+    setCrudPanels((current) => ({
+      ...current,
+      [panelName]: isOpen
+    }));
+  };
+
+  const openCreateUser = () => {
+    resetMessages();
+    setUserForm(initialUserForm);
+    setCrudPanelOpen("usuarios", true);
+  };
+
+  const openCreateProduct = () => {
+    resetMessages();
+    setProductForm(initialProductForm);
+    setCrudPanelOpen("productos", true);
+  };
+
+  const openCreateCategory = () => {
+    resetMessages();
+    setCategoryForm(initialCategoryForm);
+    setCrudPanelOpen("categorias", true);
+  };
+
+  const openCreateBrand = () => {
+    resetMessages();
+    setBrandForm(initialBrandForm);
+    setCrudPanelOpen("marcas", true);
+  };
+
+  const openCreateProvider = () => {
+    resetMessages();
+    setProviderForm(initialProviderForm);
+    setCrudPanelOpen("proveedores", true);
+  };
+
   const submitUser = async (event) => {
     event.preventDefault();
     resetMessages();
@@ -720,6 +752,7 @@ function Dashboard() {
       });
 
       setUserForm(initialUserForm);
+      setCrudPanelOpen("usuarios", false);
       setSuccess(userForm.id ? "Usuario actualizado correctamente." : "Usuario creado correctamente.");
       await loadData();
     } catch (requestError) {
@@ -740,6 +773,7 @@ function Dashboard() {
       token_validacion: item.token_validacion || "",
       activo: Boolean(item.activo)
     });
+    setCrudPanelOpen("usuarios", true);
   };
 
   const toggleUserState = async (item) => {
@@ -793,6 +827,7 @@ function Dashboard() {
       });
 
       setProductForm(initialProductForm);
+      setCrudPanelOpen("productos", false);
       setSuccess(productForm.id ? "Producto actualizado correctamente." : "Producto creado correctamente.");
       await loadData();
     } catch (requestError) {
@@ -815,6 +850,7 @@ function Dashboard() {
       descuento_porcentaje: item.descuento_porcentaje || "",
       imagen_url: item.imagen_url || ""
     });
+    setCrudPanelOpen("productos", true);
   };
 
   const submitPurchase = async (event) => {
@@ -887,6 +923,7 @@ function Dashboard() {
       setSuccess("Categoria eliminada correctamente.");
       if (String(categoryForm.id) === String(item.id)) {
         setCategoryForm(initialCategoryForm);
+        setCrudPanelOpen("categorias", false);
       }
       await loadData();
     } catch (requestError) {
@@ -909,6 +946,7 @@ function Dashboard() {
       );
 
       setCategoryForm(initialCategoryForm);
+      setCrudPanelOpen("categorias", false);
       setSuccess("Categoria guardada correctamente.");
       await loadData();
     } catch (requestError) {
@@ -931,6 +969,7 @@ function Dashboard() {
       );
 
       setBrandForm(initialBrandForm);
+      setCrudPanelOpen("marcas", false);
       setSuccess("Marca guardada correctamente.");
       await loadData();
     } catch (requestError) {
@@ -954,6 +993,7 @@ function Dashboard() {
       setSuccess("Marca eliminada correctamente.");
       if (String(brandForm.id) === String(item.id)) {
         setBrandForm(initialBrandForm);
+        setCrudPanelOpen("marcas", false);
       }
       await loadData();
     } catch (requestError) {
@@ -976,6 +1016,7 @@ function Dashboard() {
       );
 
       setProviderForm(initialProviderForm);
+      setCrudPanelOpen("proveedores", false);
       setSuccess("Proveedor guardado correctamente.");
       await loadData();
     } catch (requestError) {
@@ -1023,6 +1064,7 @@ function Dashboard() {
       setSuccess("Proveedor eliminado correctamente.");
       if (String(providerForm.id) === String(item.id)) {
         setProviderForm(initialProviderForm);
+        setCrudPanelOpen("proveedores", false);
       }
       await loadData();
     } catch (requestError) {
@@ -1048,6 +1090,42 @@ function Dashboard() {
     } finally {
       setProcessingOrderId(null);
     }
+  };
+
+  const startEditCategory = (item) => {
+    setActiveTab("categorias");
+    setCategoryForm({
+      id: item.id,
+      nombre: item.nombre,
+      descripcion: item.descripcion || "",
+      activo: Boolean(item.activo)
+    });
+    setCrudPanelOpen("categorias", true);
+  };
+
+  const startEditBrand = (item) => {
+    setActiveTab("marcas");
+    setBrandForm({
+      id: item.id,
+      nombre: item.nombre,
+      descripcion: item.descripcion || "",
+      activo: Boolean(item.activo)
+    });
+    setCrudPanelOpen("marcas", true);
+  };
+
+  const startEditProvider = (item) => {
+    setActiveTab("proveedores");
+    setProviderForm({
+      id: item.id,
+      nombre: item.nombre,
+      nit: item.nit || "",
+      telefono: item.telefono || "",
+      email: item.email || "",
+      direccion: item.direccion || "",
+      activo: Boolean(item.activo)
+    });
+    setCrudPanelOpen("proveedores", true);
   };
 
   return (
@@ -1518,10 +1596,11 @@ function Dashboard() {
 
       {activeTab === "productos" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          <article className="panel">
+          {crudPanels.productos ? (
+          <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
-                <h2>Gestion de productos</h2>
+                <h2>{productForm.id ? "Editar producto" : "Agregar producto"}</h2>
                 <p>
                   Aqui defines la ficha comercial del producto. El inventario y el
                   costo de compra se controlan desde Compras.
@@ -1640,20 +1719,36 @@ function Dashboard() {
                   <button
                     className="btn btn-outline"
                     type="button"
-                    onClick={() => setProductForm(initialProductForm)}
+                    onClick={openCreateProduct}
                   >
-                    Cancelar
+                    Nuevo
                   </button>
                 ) : null}
+                <button
+                  className="btn btn-outline"
+                  type="button"
+                  onClick={() => {
+                    setProductForm(initialProductForm);
+                    setCrudPanelOpen("productos", false);
+                  }}
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
           </article>
+          ) : null}
 
           <article className="panel">
-            <div className="panel-header">
+            <div className="panel-header panel-header--with-actions">
               <div>
                 <h2>Listado de productos</h2>
                 <p>Selecciona un producto para editar su ficha comercial. El stock se mueve en Compras.</p>
+              </div>
+              <div className="panel-actions">
+                <button className="btn btn-primary" type="button" onClick={openCreateProduct}>
+                  Agregar
+                </button>
               </div>
             </div>
 
@@ -2091,10 +2186,11 @@ function Dashboard() {
 
       {activeTab === "usuarios" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          <article className="panel">
+          {crudPanels.usuarios ? (
+          <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
-                <h2>Gestion de usuarios</h2>
+                <h2>{userForm.id ? "Editar usuario" : "Agregar usuario"}</h2>
                 <p>Crea, edita y desactiva clientes o trabajadores.</p>
               </div>
             </div>
@@ -2121,15 +2217,6 @@ function Dashboard() {
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
               </select>
-              {userForm.id ? (
-                <div className="admin-inline-summary">
-                  <strong>Token de validacion</strong>
-                  <span>{userForm.token_validacion || "Se generara automaticamente"}</span>
-                  <small>Este token identifica y valida la cuenta del usuario dentro del sistema.</small>
-                </div>
-              ) : (
-                <p className="form-note">El token de validacion se genera automaticamente al crear el usuario.</p>
-              )}
               <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {userForm.id ? "Actualizar usuario" : "Crear usuario"}
@@ -2138,20 +2225,36 @@ function Dashboard() {
                   <button
                     className="btn btn-outline"
                     type="button"
-                    onClick={() => setUserForm(initialUserForm)}
+                    onClick={openCreateUser}
                   >
-                    Cancelar
+                    Nuevo
                   </button>
                 ) : null}
+                <button
+                  className="btn btn-outline"
+                  type="button"
+                  onClick={() => {
+                    setUserForm(initialUserForm);
+                    setCrudPanelOpen("usuarios", false);
+                  }}
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
           </article>
+          ) : null}
 
           <article className="panel">
-            <div className="panel-header">
+            <div className="panel-header panel-header--with-actions">
               <div>
                 <h2>Listado de usuarios</h2>
                 <p>Accede rapido a editar o activar y desactivar cuentas.</p>
+              </div>
+              <div className="panel-actions">
+                <button className="btn btn-primary" type="button" onClick={openCreateUser}>
+                  Agregar
+                </button>
               </div>
             </div>
 
@@ -2179,7 +2282,6 @@ function Dashboard() {
                     <th>Nombre</th>
                     <th>Correo</th>
                     <th>Rol</th>
-                    <th>Token</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -2191,9 +2293,6 @@ function Dashboard() {
                         <td>{item.nombre}</td>
                         <td>{item.email}</td>
                         <td>{item.rol}</td>
-                        <td>
-                          <span className="table-token">{formatValidationToken(item.token_validacion)}</span>
-                        </td>
                         <td>{item.activo ? "Activo" : "Inactivo"}</td>
                         <td>
                           <div className="table-actions">
@@ -2209,7 +2308,7 @@ function Dashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6">No hay usuarios que coincidan con la busqueda actual.</td>
+                      <td colSpan="5">No hay usuarios que coincidan con la busqueda actual.</td>
                     </tr>
                   )}
                 </tbody>
@@ -2221,10 +2320,11 @@ function Dashboard() {
 
       {activeTab === "categorias" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          <article className="panel">
+          {crudPanels.categorias ? (
+          <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
-                <h2>Categorias</h2>
+                <h2>{categoryForm.id ? "Editar categoria" : "Agregar categoria"}</h2>
                 <p>Organiza el catalogo por familias de producto.</p>
               </div>
             </div>
@@ -2241,20 +2341,36 @@ function Dashboard() {
                   {categoryForm.id ? "Actualizar categoria" : "Crear categoria"}
                 </button>
                 {categoryForm.id ? (
-                  <button className="btn btn-outline" type="button" onClick={() => setCategoryForm(initialCategoryForm)}>
-                    Cancelar
+                  <button className="btn btn-outline" type="button" onClick={openCreateCategory}>
+                    Nueva
                   </button>
                 ) : null}
+                <button
+                  className="btn btn-outline"
+                  type="button"
+                  onClick={() => {
+                    setCategoryForm(initialCategoryForm);
+                    setCrudPanelOpen("categorias", false);
+                  }}
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
 
           </article>
+          ) : null}
 
           <article className="panel">
-            <div className="panel-header">
+            <div className="panel-header panel-header--with-actions">
               <div>
                 <h2>Listado de categorias</h2>
                 <p>Filtra y actualiza rapidamente el estado de cada familia de producto.</p>
+              </div>
+              <div className="panel-actions">
+                <button className="btn btn-primary" type="button" onClick={openCreateCategory}>
+                  Agregar
+                </button>
               </div>
             </div>
 
@@ -2301,14 +2417,7 @@ function Dashboard() {
                             <button
                               className="btn btn-outline"
                               type="button"
-                              onClick={() =>
-                                setCategoryForm({
-                                  id: item.id,
-                                  nombre: item.nombre,
-                                  descripcion: item.descripcion || "",
-                                  activo: Boolean(item.activo)
-                                })
-                              }
+                              onClick={() => startEditCategory(item)}
                             >
                               Editar
                             </button>
@@ -2337,10 +2446,11 @@ function Dashboard() {
 
       {activeTab === "marcas" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          <article className="panel">
+          {crudPanels.marcas ? (
+          <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
-                <h2>Marcas</h2>
+                <h2>{brandForm.id ? "Editar marca" : "Agregar marca"}</h2>
                 <p>Administra las marcas disponibles para el catalogo.</p>
               </div>
             </div>
@@ -2357,20 +2467,36 @@ function Dashboard() {
                   {brandForm.id ? "Actualizar marca" : "Crear marca"}
                 </button>
                 {brandForm.id ? (
-                  <button className="btn btn-outline" type="button" onClick={() => setBrandForm(initialBrandForm)}>
-                    Cancelar
+                  <button className="btn btn-outline" type="button" onClick={openCreateBrand}>
+                    Nueva
                   </button>
                 ) : null}
+                <button
+                  className="btn btn-outline"
+                  type="button"
+                  onClick={() => {
+                    setBrandForm(initialBrandForm);
+                    setCrudPanelOpen("marcas", false);
+                  }}
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
 
           </article>
+          ) : null}
 
           <article className="panel">
-            <div className="panel-header">
+            <div className="panel-header panel-header--with-actions">
               <div>
                 <h2>Listado de marcas</h2>
                 <p>Consulta marcas registradas y ajusta su estado sin perder contexto.</p>
+              </div>
+              <div className="panel-actions">
+                <button className="btn btn-primary" type="button" onClick={openCreateBrand}>
+                  Agregar
+                </button>
               </div>
             </div>
 
@@ -2417,14 +2543,7 @@ function Dashboard() {
                             <button
                               className="btn btn-outline"
                               type="button"
-                              onClick={() =>
-                                setBrandForm({
-                                  id: item.id,
-                                  nombre: item.nombre,
-                                  descripcion: item.descripcion || "",
-                                  activo: Boolean(item.activo)
-                                })
-                              }
+                              onClick={() => startEditBrand(item)}
                             >
                               Editar
                             </button>
@@ -2453,10 +2572,11 @@ function Dashboard() {
 
       {activeTab === "proveedores" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          <article className="panel">
+          {crudPanels.proveedores ? (
+          <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
-                <h2>Proveedores</h2>
+                <h2>{providerForm.id ? "Editar proveedor" : "Agregar proveedor"}</h2>
                 <p>Controla tus aliados para reposicion de inventario.</p>
               </div>
             </div>
@@ -2476,20 +2596,36 @@ function Dashboard() {
                   {providerForm.id ? "Actualizar proveedor" : "Crear proveedor"}
                 </button>
                 {providerForm.id ? (
-                  <button className="btn btn-outline" type="button" onClick={() => setProviderForm(initialProviderForm)}>
-                    Cancelar
+                  <button className="btn btn-outline" type="button" onClick={openCreateProvider}>
+                    Nuevo
                   </button>
                 ) : null}
+                <button
+                  className="btn btn-outline"
+                  type="button"
+                  onClick={() => {
+                    setProviderForm(initialProviderForm);
+                    setCrudPanelOpen("proveedores", false);
+                  }}
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
 
           </article>
+          ) : null}
 
           <article className="panel">
-            <div className="panel-header">
+            <div className="panel-header panel-header--with-actions">
               <div>
                 <h2>Listado de proveedores</h2>
                 <p>Gestiona contacto, estado y disponibilidad de cada aliado comercial.</p>
+              </div>
+              <div className="panel-actions">
+                <button className="btn btn-primary" type="button" onClick={openCreateProvider}>
+                  Agregar
+                </button>
               </div>
             </div>
 
@@ -2550,17 +2686,7 @@ function Dashboard() {
                     <button
                       className="btn btn-outline"
                       type="button"
-                      onClick={() =>
-                        setProviderForm({
-                          id: item.id,
-                          nombre: item.nombre,
-                          nit: item.nit || "",
-                          telefono: item.telefono || "",
-                          email: item.email || "",
-                          direccion: item.direccion || "",
-                          activo: Boolean(item.activo)
-                        })
-                      }
+                      onClick={() => startEditProvider(item)}
                     >
                       Editar
                     </button>

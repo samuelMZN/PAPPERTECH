@@ -1456,6 +1456,11 @@ button {
   position: sticky;
   top: calc(var(--topbar-height) + 12px);
   z-index: 18;
+  margin-bottom: 20px;
+}
+
+.search-dock--top {
+  margin-top: 4px;
 }
 
 .search-dock__inner {
@@ -1464,7 +1469,9 @@ button {
   padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: 24px;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--surface-soft) 90%, transparent)),
+    radial-gradient(circle at top right, rgba(79, 166, 255, 0.1), transparent 30%);
   backdrop-filter: blur(18px);
   box-shadow: var(--soft-shadow);
 }
@@ -1498,6 +1505,10 @@ button {
   border-radius: 14px;
   background: var(--surface);
   color: var(--ink);
+}
+
+.search-dock + .store-hero {
+  margin-top: 2px;
 }
 
 .filter-pill {
@@ -2587,6 +2598,7 @@ button {
 
   .search-dock {
     position: static;
+    margin-bottom: 18px;
   }
 
   .search-dock__search {

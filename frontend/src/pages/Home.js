@@ -447,26 +447,7 @@ function Home() {
 
   return (
     <section className="home-page">
-      <section className="store-hero store-hero--navy">
-        <div className="store-hero__copy">
-          <h1>Explora mas categorias, muestra mas productos y filtra mejor.</h1>
-        </div>
-
-        <div className="store-hero__promo">
-          <article className="promo-card promo-card--primary">
-            <p>Productos activos</p>
-            <strong>{productos.length}</strong>
-            <span>{totalStock} unidades listas para venta</span>
-          </article>
-          <article className="promo-card promo-card--secondary">
-            <p>Categorias activas</p>
-            <strong>{categoryShowcase.length}</strong>
-            <span>solo aparecen si tienen productos con stock disponible</span>
-          </article>
-        </div>
-      </section>
-
-      <section className="search-dock">
+      <section className="search-dock search-dock--top">
         <div className="search-dock__inner">
           <div className="search-dock__search">
             <input
@@ -534,6 +515,25 @@ function Home() {
               Limpiar
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className="store-hero store-hero--navy">
+        <div className="store-hero__copy">
+          <h1>Explora mas categorias, muestra mas productos y filtra mejor.</h1>
+        </div>
+
+        <div className="store-hero__promo">
+          <article className="promo-card promo-card--primary">
+            <p>Productos activos</p>
+            <strong>{productos.length}</strong>
+            <span>{totalStock} unidades listas para venta</span>
+          </article>
+          <article className="promo-card promo-card--secondary">
+            <p>Categorias activas</p>
+            <strong>{categoryShowcase.length}</strong>
+            <span>solo aparecen si tienen productos con stock disponible</span>
+          </article>
         </div>
       </section>
 

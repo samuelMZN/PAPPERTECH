@@ -6,6 +6,7 @@ const AUTH_SESSION_VERSION = "2026-05-09-auth-v3";
 const AUTH_VERSION_KEY = "pappertech-auth-version";
 const SESSION_TOKEN_KEY = "token";
 const SESSION_USER_KEY = "user";
+const SHARED_AUTH_KEY = "pappertech-shared-auth";
 
 function getStorage(kind) {
   if (typeof window === "undefined") {
@@ -25,6 +26,59 @@ function readSessionValue(key) {
   return session.getItem(key);
 }
 
+function parseStoredUser(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsedUser = typeof value === "string" ? JSON.parse(value) : value;
+
+    return {
+      ...parsedUser,
+      rol: normalizeRole(parsedUser?.rol || parsedUser?.rol_id),
+      rol_id: normalizeRole(parsedUser?.rol || parsedUser?.rol_id)
+    };
+  } catch (_error) {
+    return null;
+  }
+}
+
+function readSharedAuth() {
+  const local = getStorage("localStorage");
+
+  if (!local) {
+    return null;
+  }
+
+  try {
+    const rawValue = local.getItem(SHARED_AUTH_KEY);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+
+    if (parsedValue?.version !== AUTH_SESSION_VERSION || !parsedValue?.token) {
+      return null;
+    }
+
+    const parsedUser = parseStoredUser(parsedValue.user);
+
+    if (!parsedUser) {
+      return null;
+    }
+
+    return {
+      token: parsedValue.token,
+      user: parsedUser
+    };
+  } catch (_error) {
+    return null;
+  }
+}
+
 function bootstrapAuthStorage() {
   const session = getStorage("sessionStorage");
   const local = getStorage("localStorage");
@@ -41,8 +95,17 @@ function bootstrapAuthStorage() {
     session.setItem(AUTH_VERSION_KEY, AUTH_SESSION_VERSION);
   }
 
-  local?.removeItem(SESSION_TOKEN_KEY);
-  local?.removeItem(SESSION_USER_KEY);
+  const sharedAuth = readSharedAuth();
+
+  if (!sharedAuth) {
+    session.removeItem(SESSION_TOKEN_KEY);
+    session.removeItem(SESSION_USER_KEY);
+    local?.removeItem(SHARED_AUTH_KEY);
+    return;
+  }
+
+  session.setItem(SESSION_TOKEN_KEY, sharedAuth.token);
+  session.setItem(SESSION_USER_KEY, JSON.stringify(sharedAuth.user));
 }
 
 function normalizeRole(role) {
@@ -66,26 +129,16 @@ function normalizeRole(role) {
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => {
     bootstrapAuthStorage();
-    return readSessionValue(SESSION_TOKEN_KEY);
+    return readSharedAuth()?.token || readSessionValue(SESSION_TOKEN_KEY);
   });
   const [user, setUser] = useState(() => {
-    const savedUser = readSessionValue(SESSION_USER_KEY);
+    const sharedAuth = readSharedAuth();
 
-    if (!savedUser) {
-      return null;
+    if (sharedAuth?.user) {
+      return sharedAuth.user;
     }
 
-    try {
-      const parsedUser = JSON.parse(savedUser);
-
-      return {
-        ...parsedUser,
-        rol: normalizeRole(parsedUser?.rol || parsedUser?.rol_id),
-        rol_id: normalizeRole(parsedUser?.rol || parsedUser?.rol_id)
-      };
-    } catch (_error) {
-      return null;
-    }
+    return parseStoredUser(readSessionValue(SESSION_USER_KEY));
   });
   const [loading, setLoading] = useState(Boolean(token));
   const role = normalizeRole(user?.rol || user?.rol_id);
@@ -99,29 +152,75 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const session = getStorage("sessionStorage");
-    const local = getStorage("localStorage");
 
     if (token) {
       session?.setItem(SESSION_TOKEN_KEY, token);
     } else {
       session?.removeItem(SESSION_TOKEN_KEY);
     }
-
-    local?.removeItem(SESSION_TOKEN_KEY);
   }, [token]);
 
   useEffect(() => {
     const session = getStorage("sessionStorage");
-    const local = getStorage("localStorage");
 
     if (user) {
       session?.setItem(SESSION_USER_KEY, JSON.stringify(user));
     } else {
       session?.removeItem(SESSION_USER_KEY);
     }
-
-    local?.removeItem(SESSION_USER_KEY);
   }, [user]);
+
+  useEffect(() => {
+    const local = getStorage("localStorage");
+
+    if (!local) {
+      return;
+    }
+
+    if (token && user) {
+      local.setItem(
+        SHARED_AUTH_KEY,
+        JSON.stringify({
+          version: AUTH_SESSION_VERSION,
+          token,
+          user
+        })
+      );
+    } else {
+      local.removeItem(SHARED_AUTH_KEY);
+    }
+  }, [token, user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const syncAuthFromStorage = (event) => {
+      if (event.key !== SHARED_AUTH_KEY) {
+        return;
+      }
+
+      const sharedAuth = readSharedAuth();
+
+      if (!sharedAuth) {
+        setToken(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      setToken(sharedAuth.token);
+      setUser(sharedAuth.user);
+      setLoading(false);
+    };
+
+    window.addEventListener("storage", syncAuthFromStorage);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthFromStorage);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;

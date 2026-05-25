@@ -200,9 +200,14 @@ function Cart() {
           <p>{cartCount} productos listos para comprar.</p>
         </div>
 
-        <button type="button" className="btn btn-outline" onClick={handleClear}>
-          Vaciar carrito
-        </button>
+        <div className="cart-page__header-actions">
+          <Link className="btn btn-secondary" to="/">
+            Volver al catalogo
+          </Link>
+          <button type="button" className="btn btn-outline" onClick={handleClear}>
+            Vaciar carrito
+          </button>
+        </div>
       </div>
 
       {error ? <p className="message error">{error}</p> : null}

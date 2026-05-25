@@ -2252,6 +2252,14 @@ button {
   gap: 18px;
 }
 
+.cart-page__header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .cart-layout {
   display: grid;
   grid-template-columns: 1.6fr 0.95fr;

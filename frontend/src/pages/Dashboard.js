@@ -1517,7 +1517,7 @@ function Dashboard() {
       ) : null}
 
       {activeTab === "productos" ? (
-        <section className="dashboard-grid bottom-grid">
+        <section className="dashboard-grid dashboard-grid--crud-stack">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -1690,35 +1690,41 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleProducts.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.nombre}</td>
-                      <td>{item.categoria || "-"}</td>
-                      <td>{formatCatalogPrice(item.precio_venta)}</td>
-                      <td>{formatPercent(item.margen_porcentaje || 0)}</td>
-                      <td>{item.proveedor || "-"}</td>
-                      <td>
-                        {item.descuento_cantidad_minima && item.descuento_porcentaje
-                          ? `${item.descuento_porcentaje}% x ${item.descuento_cantidad_minima}+`
-                          : "-"}
-                      </td>
-                      <td>{item.stock}</td>
-                      <td>{item.stock_minimo}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button className="btn btn-outline" type="button" onClick={() => startEditProduct(item)}>
-                            Editar
-                          </button>
-                          <button className="btn btn-outline" type="button" onClick={() => deleteProduct(item)}>
-                            Desactivar
-                          </button>
-                          <button className="btn btn-outline btn-danger-lite" type="button" onClick={() => deleteProduct(item, "hard")}>
-                            Borrar
-                          </button>
-                        </div>
-                      </td>
+                  {visibleProducts.length > 0 ? (
+                    visibleProducts.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.nombre}</td>
+                        <td>{item.categoria || "-"}</td>
+                        <td>{formatCatalogPrice(item.precio_venta)}</td>
+                        <td>{formatPercent(item.margen_porcentaje || 0)}</td>
+                        <td>{item.proveedor || "-"}</td>
+                        <td>
+                          {item.descuento_cantidad_minima && item.descuento_porcentaje
+                            ? `${item.descuento_porcentaje}% x ${item.descuento_cantidad_minima}+`
+                            : "-"}
+                        </td>
+                        <td>{item.stock}</td>
+                        <td>{item.stock_minimo}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="btn btn-outline" type="button" onClick={() => startEditProduct(item)}>
+                              Editar
+                            </button>
+                            <button className="btn btn-outline" type="button" onClick={() => deleteProduct(item)}>
+                              Desactivar
+                            </button>
+                            <button className="btn btn-outline btn-danger-lite" type="button" onClick={() => deleteProduct(item, "hard")}>
+                              Borrar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="9">No hay productos que coincidan con la busqueda actual.</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -2084,7 +2090,7 @@ function Dashboard() {
       ) : null}
 
       {activeTab === "usuarios" ? (
-        <section className="dashboard-grid bottom-grid">
+        <section className="dashboard-grid dashboard-grid--crud-stack">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -2179,27 +2185,33 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleUsers.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.nombre}</td>
-                      <td>{item.email}</td>
-                      <td>{item.rol}</td>
-                      <td>
-                        <span className="table-token">{formatValidationToken(item.token_validacion)}</span>
-                      </td>
-                      <td>{item.activo ? "Activo" : "Inactivo"}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button className="btn btn-outline" type="button" onClick={() => startEditUser(item)}>
-                            Editar
-                          </button>
-                          <button className="btn btn-outline" type="button" onClick={() => toggleUserState(item)}>
-                            {item.activo ? "Desactivar" : "Activar"}
-                          </button>
-                        </div>
-                      </td>
+                  {visibleUsers.length > 0 ? (
+                    visibleUsers.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.nombre}</td>
+                        <td>{item.email}</td>
+                        <td>{item.rol}</td>
+                        <td>
+                          <span className="table-token">{formatValidationToken(item.token_validacion)}</span>
+                        </td>
+                        <td>{item.activo ? "Activo" : "Inactivo"}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="btn btn-outline" type="button" onClick={() => startEditUser(item)}>
+                              Editar
+                            </button>
+                            <button className="btn btn-outline" type="button" onClick={() => toggleUserState(item)}>
+                              {item.activo ? "Desactivar" : "Activar"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6">No hay usuarios que coincidan con la busqueda actual.</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -2208,7 +2220,7 @@ function Dashboard() {
       ) : null}
 
       {activeTab === "categorias" ? (
-        <section className="dashboard-grid bottom-grid">
+        <section className="dashboard-grid dashboard-grid--crud-stack">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -2263,54 +2275,68 @@ function Dashboard() {
               </button>
             </div>
 
-            {visibleCategories.length > 0 ? (
-              <ul className="activity-list activity-list--catalog">
-                {visibleCategories.map((item) => (
-                  <li key={item.id}>
-                    <div className="catalog-admin-card__head">
-                      <strong>{item.nombre}</strong>
-                      <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
-                        {item.activo ? "Activa" : "Inactiva"}
-                      </span>
-                    </div>
-                    <span>{item.descripcion || "Sin descripcion registrada"}</span>
-                    <div className="catalog-admin-card__actions">
-                      <button
-                        className="btn btn-outline"
-                        type="button"
-                        onClick={() =>
-                          setCategoryForm({
-                            id: item.id,
-                            nombre: item.nombre,
-                            descripcion: item.descripcion || "",
-                            activo: Boolean(item.activo)
-                          })
-                        }
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-outline btn-danger-lite"
-                        type="button"
-                        onClick={() => deleteCategory(item)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="empty-state empty-state--catalog">
-                {getCatalogEmptyMessage("categorias", categoryQuery)}
-              </div>
-            )}
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Descripcion</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleCategories.length > 0 ? (
+                    visibleCategories.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.nombre}</td>
+                        <td>{item.descripcion || "Sin descripcion registrada"}</td>
+                        <td>
+                          <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                            {item.activo ? "Activa" : "Inactiva"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              className="btn btn-outline"
+                              type="button"
+                              onClick={() =>
+                                setCategoryForm({
+                                  id: item.id,
+                                  nombre: item.nombre,
+                                  descripcion: item.descripcion || "",
+                                  activo: Boolean(item.activo)
+                                })
+                              }
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="btn btn-outline btn-danger-lite"
+                              type="button"
+                              onClick={() => deleteCategory(item)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4">{getCatalogEmptyMessage("categorias", categoryQuery)}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
         </section>
       ) : null}
 
       {activeTab === "marcas" ? (
-        <section className="dashboard-grid bottom-grid">
+        <section className="dashboard-grid dashboard-grid--crud-stack">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -2365,54 +2391,68 @@ function Dashboard() {
               </button>
             </div>
 
-            {visibleBrands.length > 0 ? (
-              <ul className="activity-list activity-list--catalog">
-                {visibleBrands.map((item) => (
-                  <li key={item.id}>
-                    <div className="catalog-admin-card__head">
-                      <strong>{item.nombre}</strong>
-                      <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
-                        {item.activo ? "Activa" : "Inactiva"}
-                      </span>
-                    </div>
-                    <span>{item.descripcion || "Sin descripcion registrada"}</span>
-                    <div className="catalog-admin-card__actions">
-                      <button
-                        className="btn btn-outline"
-                        type="button"
-                        onClick={() =>
-                          setBrandForm({
-                            id: item.id,
-                            nombre: item.nombre,
-                            descripcion: item.descripcion || "",
-                            activo: Boolean(item.activo)
-                          })
-                        }
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-outline btn-danger-lite"
-                        type="button"
-                        onClick={() => deleteBrand(item)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="empty-state empty-state--catalog">
-                {getCatalogEmptyMessage("marcas", brandQuery)}
-              </div>
-            )}
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Descripcion</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleBrands.length > 0 ? (
+                    visibleBrands.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.nombre}</td>
+                        <td>{item.descripcion || "Sin descripcion registrada"}</td>
+                        <td>
+                          <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                            {item.activo ? "Activa" : "Inactiva"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              className="btn btn-outline"
+                              type="button"
+                              onClick={() =>
+                                setBrandForm({
+                                  id: item.id,
+                                  nombre: item.nombre,
+                                  descripcion: item.descripcion || "",
+                                  activo: Boolean(item.activo)
+                                })
+                              }
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="btn btn-outline btn-danger-lite"
+                              type="button"
+                              onClick={() => deleteBrand(item)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4">{getCatalogEmptyMessage("marcas", brandQuery)}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
         </section>
       ) : null}
 
       {activeTab === "proveedores" ? (
-        <section className="dashboard-grid bottom-grid">
+        <section className="dashboard-grid dashboard-grid--crud-stack">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -2470,24 +2510,43 @@ function Dashboard() {
               </button>
             </div>
 
-            {visibleProviders.length > 0 ? (
-              <ul className="activity-list activity-list--catalog">
-              {visibleProviders.map((item) => (
-                <li key={item.id}>
-                  <div className="catalog-admin-card__head">
-                    <strong>{item.nombre}</strong>
-                    <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
-                      {item.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </div>
-                  <span className="catalog-admin-card__meta">
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>NIT</th>
+                    <th>Correo</th>
+                    <th>Telefono</th>
+                    <th>Direccion</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleProviders.length > 0 ? (
+                    visibleProviders.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.nombre}</td>
+                        <td>{item.nit || "Sin NIT"}</td>
+                        {/*
                     {item.nit ? `NIT ${item.nit}` : "Sin NIT"} • {item.email || "Sin correo"} • {item.telefono || "Sin telefono"}
                   </span>
                   <span className="catalog-admin-card__meta-clean">
                     {item.nit ? `NIT ${item.nit}` : "Sin NIT"} - {item.email || "Sin correo"} - {item.telefono || "Sin telefono"}
                   </span>
                   <span>{item.direccion || "Sin direccion registrada"}</span>
-                  <div className="catalog-admin-card__actions">
+                        */}
+                        <td>{item.email || "Sin correo"}</td>
+                        <td>{item.telefono || "Sin telefono"}</td>
+                        <td>{item.direccion || "Sin direccion registrada"}</td>
+                        <td>
+                          <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
+                            {item.activo ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="table-actions">
                     <button
                       className="btn btn-outline"
                       type="button"
@@ -2519,15 +2578,18 @@ function Dashboard() {
                     >
                       Eliminar
                     </button>
-                  </div>
-                </li>
-              ))}
-              </ul>
-            ) : (
-              <div className="empty-state empty-state--catalog">
-                {getCatalogEmptyMessage("proveedores", providerQuery)}
-              </div>
-            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7">{getCatalogEmptyMessage("proveedores", providerQuery)}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </article>
         </section>
       ) : null}

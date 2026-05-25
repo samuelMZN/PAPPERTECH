@@ -1052,27 +1052,6 @@ function Dashboard() {
 
   return (
     <section className="page-section">
-      <section className="dashboard-hero dashboard-hero--report">
-        <div>
-          <span className="eyebrow">Dashboard exclusivo del administrador</span>
-          <h1>Control total del sistema PapperTech.</h1>
-          <p>
-            Ahora el panel esta separado por secciones y este recuadro resume el
-            informe del negocio con ventas, costos, utilidad, perdidas y margen.
-          </p>
-        </div>
-
-        <div className="stats-grid stats-grid--report">
-          {reportCards.map((card) => (
-            <article key={card.id} className={`stat-card stat-card--${card.tone}`}>
-              <small className="stat-card__label">{card.label}</small>
-              <strong>{card.value}</strong>
-              <span>{card.note}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
       {loading ? <p className="status">Cargando dashboard...</p> : null}
       {error ? <p className="message error">{error}</p> : null}
       {success ? <p className="message success">{success}</p> : null}

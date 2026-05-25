@@ -36,6 +36,20 @@ function formatCatalogPrice(value) {
   return Number(value || 0) > 0 ? formatCurrency(value) : "Se calcula con la compra";
 }
 
+function formatValidationToken(value) {
+  const token = String(value || "").trim();
+
+  if (!token) {
+    return "Sin token";
+  }
+
+  if (token.length <= 16) {
+    return token;
+  }
+
+  return `${token.slice(0, 10)}...${token.slice(-6)}`;
+}
+
 function normalizeSearchValue(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -85,7 +99,9 @@ const adminTabs = [
   { id: "compras", label: "Compras" },
   { id: "devoluciones", label: "Devoluciones" },
   { id: "usuarios", label: "Usuarios" },
-  { id: "catalogos", label: "Catalogos" }
+  { id: "categorias", label: "Categorias" },
+  { id: "marcas", label: "Marcas" },
+  { id: "proveedores", label: "Proveedores" }
 ];
 
 const initialUserForm = {
@@ -96,6 +112,7 @@ const initialUserForm = {
   rol: "trabajador",
   telefono: "",
   direccion: "",
+  token_validacion: "",
   activo: true
 };
 
@@ -468,7 +485,14 @@ function Dashboard() {
 
   const visibleUsers = useMemo(() => {
     return users.filter((item) =>
-      matchesSearch(userQuery, item.nombre, item.email, item.rol, item.activo ? "activo" : "inactivo")
+      matchesSearch(
+        userQuery,
+        item.nombre,
+        item.email,
+        item.rol,
+        item.token_validacion,
+        item.activo ? "activo" : "inactivo"
+      )
     );
   }, [userQuery, users]);
 
@@ -684,11 +708,13 @@ function Dashboard() {
     resetMessages();
 
     try {
+      const { token_validacion: _tokenValidacion, ...payload } = userForm;
+
       await apiRequest(userForm.id ? `/usuarios/${userForm.id}` : "/usuarios", {
         method: userForm.id ? "PUT" : "POST",
         token,
         body: {
-          ...userForm,
+          ...payload,
           activo: Boolean(userForm.activo)
         }
       });
@@ -711,6 +737,7 @@ function Dashboard() {
       rol: item.rol,
       telefono: item.telefono || "",
       direccion: item.direccion || "",
+      token_validacion: item.token_validacion || "",
       activo: Boolean(item.activo)
     });
   };
@@ -2109,6 +2136,15 @@ function Dashboard() {
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
               </select>
+              {userForm.id ? (
+                <div className="admin-inline-summary">
+                  <strong>Token de validacion</strong>
+                  <span>{userForm.token_validacion || "Se generara automaticamente"}</span>
+                  <small>Este token identifica y valida la cuenta del usuario dentro del sistema.</small>
+                </div>
+              ) : (
+                <p className="form-note">El token de validacion se genera automaticamente al crear el usuario.</p>
+              )}
               <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {userForm.id ? "Actualizar usuario" : "Crear usuario"}
@@ -2156,7 +2192,9 @@ function Dashboard() {
                 <thead>
                   <tr>
                     <th>Nombre</th>
+                    <th>Correo</th>
                     <th>Rol</th>
+                    <th>Token</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -2165,7 +2203,11 @@ function Dashboard() {
                   {visibleUsers.map((item) => (
                     <tr key={item.id}>
                       <td>{item.nombre}</td>
+                      <td>{item.email}</td>
                       <td>{item.rol}</td>
+                      <td>
+                        <span className="table-token">{formatValidationToken(item.token_validacion)}</span>
+                      </td>
                       <td>{item.activo ? "Activo" : "Inactivo"}</td>
                       <td>
                         <div className="table-actions">
@@ -2186,7 +2228,7 @@ function Dashboard() {
         </section>
       ) : null}
 
-      {activeTab === "catalogos" ? (
+      {activeTab === "categorias" ? (
         <section className="dashboard-grid bottom-grid">
           <article className="panel">
             <div className="panel-header">
@@ -2214,6 +2256,16 @@ function Dashboard() {
                 ) : null}
               </div>
             </form>
+
+          </article>
+
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <h2>Listado de categorias</h2>
+                <p>Filtra y actualiza rapidamente el estado de cada familia de producto.</p>
+              </div>
+            </div>
 
             <div className="filter-toolbar filter-toolbar--catalog">
               <input
@@ -2275,7 +2327,11 @@ function Dashboard() {
               </div>
             )}
           </article>
+        </section>
+      ) : null}
 
+      {activeTab === "marcas" ? (
+        <section className="dashboard-grid bottom-grid">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -2302,6 +2358,16 @@ function Dashboard() {
                 ) : null}
               </div>
             </form>
+
+          </article>
+
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <h2>Listado de marcas</h2>
+                <p>Consulta marcas registradas y ajusta su estado sin perder contexto.</p>
+              </div>
+            </div>
 
             <div className="filter-toolbar filter-toolbar--catalog">
               <input
@@ -2363,7 +2429,11 @@ function Dashboard() {
               </div>
             )}
           </article>
+        </section>
+      ) : null}
 
+      {activeTab === "proveedores" ? (
+        <section className="dashboard-grid bottom-grid">
           <article className="panel">
             <div className="panel-header">
               <div>
@@ -2382,7 +2452,7 @@ function Dashboard() {
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
               </select>
-              <div className="form-actions">
+              <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
                   {providerForm.id ? "Actualizar proveedor" : "Crear proveedor"}
                 </button>
@@ -2393,6 +2463,16 @@ function Dashboard() {
                 ) : null}
               </div>
             </form>
+
+          </article>
+
+          <article className="panel">
+            <div className="panel-header">
+              <div>
+                <h2>Listado de proveedores</h2>
+                <p>Gestiona contacto, estado y disponibilidad de cada aliado comercial.</p>
+              </div>
+            </div>
 
             <div className="filter-toolbar filter-toolbar--catalog">
               <input

@@ -976,6 +976,8 @@ button {
   display: grid;
   gap: 16px;
   padding: 18px 14px;
+  max-height: calc(100vh - var(--topbar-height) - 28px);
+  overflow: auto;
 }
 
 .dashboard-sidebar__header {
@@ -1251,6 +1253,20 @@ button {
 
 .data-table .table-actions {
   min-width: 152px;
+}
+
+.table-token {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
+  color: var(--ink);
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
 }
 
 .data-table th:last-child,

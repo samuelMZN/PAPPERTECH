@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const db = require("../config/db");
 const authMiddleware = require("../middleware/auth");
 const { logAudit } = require("../utils/audit");
+const { generateValidationToken } = require("../utils/validation-token");
 
 function sanitizeUser(user) {
   return {
@@ -12,6 +13,7 @@ function sanitizeUser(user) {
     telefono: user.telefono || "",
     direccion: user.direccion || "",
     activo: Number(user.activo ?? 1),
+    token_validacion: user.token_validacion || user.email_verificacion_token || "",
     creado_en: user.creado_en,
     actualizado_en: user.actualizado_en
   };
@@ -30,7 +32,17 @@ function normalizeWritableRole(role) {
 exports.getUsuarios = async (_req, res) => {
   try {
     const [usuarios] = await db.promise().query(`
-      SELECT id, nombre, email, rol, telefono, direccion, activo, creado_en, actualizado_en
+      SELECT
+        id,
+        nombre,
+        email,
+        rol,
+        telefono,
+        direccion,
+        activo,
+        email_verificacion_token,
+        creado_en,
+        actualizado_en
       FROM usuarios
       ORDER BY activo DESC, creado_en DESC, id DESC
     `);
@@ -65,13 +77,14 @@ exports.crearUsuario = async (req, res) => {
     }
 
     const hash = bcrypt.hashSync(password, 10);
+    const validationToken = generateValidationToken();
     const [result] = await db.promise().execute(
       `
         INSERT INTO usuarios
-          (nombre, email, password_hash, rol, telefono, direccion, activo)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (nombre, email, password_hash, rol, telefono, direccion, activo, email_verificacion_token)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
-      [nombre, email, hash, rol, telefono, direccion, activo]
+      [nombre, email, hash, rol, telefono, direccion, activo, validationToken]
     );
 
     await logAudit(db.promise(), {
@@ -105,7 +118,17 @@ exports.actualizarUsuario = async (req, res) => {
   try {
     const [rows] = await connection.execute(
       `
-        SELECT id, nombre, email, rol, telefono, direccion, activo, creado_en, actualizado_en
+        SELECT
+          id,
+          nombre,
+          email,
+          rol,
+          telefono,
+          direccion,
+          activo,
+          email_verificacion_token,
+          creado_en,
+          actualizado_en
         FROM usuarios
         WHERE id = ?
         LIMIT 1
@@ -155,10 +178,11 @@ exports.actualizarUsuario = async (req, res) => {
       `
         UPDATE usuarios
         SET nombre = ?, email = ?, rol = ?, telefono = ?, direccion = ?, activo = ?,
-            password_hash = COALESCE(?, password_hash)
+            password_hash = COALESCE(?, password_hash),
+            email_verificacion_token = COALESCE(NULLIF(email_verificacion_token, ''), ?)
         WHERE id = ?
       `,
-      [nombre, email, rol, telefono, direccion, activo, passwordHash, targetId]
+      [nombre, email, rol, telefono, direccion, activo, passwordHash, generateValidationToken(), targetId]
     );
 
     await logAudit(connection, {

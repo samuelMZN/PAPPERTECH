@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("../middleware/auth");
 const { logAudit } = require("../utils/audit");
+const { generateValidationToken } = require("../utils/validation-token");
 
 function sanitizeUser(user) {
   const normalizedRole = authMiddleware.normalizeRole(user.rol || user.rol_id);
@@ -16,7 +17,8 @@ function sanitizeUser(user) {
     telefono: user.telefono || "",
     direccion: user.direccion || "",
     activo: Number(user.activo ?? 1),
-    email_verificado: Number(user.email_verificado ?? 1)
+    email_verificado: Number(user.email_verificado ?? 1),
+    token_validacion: user.token_validacion || user.email_verificacion_token || ""
   };
 }
 
@@ -40,6 +42,7 @@ exports.register = async (req, res) => {
     }
 
     const hash = bcrypt.hashSync(password, 10);
+    const validationToken = generateValidationToken();
 
     await db.promise().execute(
       `
@@ -50,11 +53,12 @@ exports.register = async (req, res) => {
             password_hash,
             rol,
             activo,
-            email_verificado
+            email_verificado,
+            email_verificacion_token
           )
-        VALUES (?, ?, ?, 'cliente', 1, 1)
+        VALUES (?, ?, ?, 'cliente', 1, 1, ?)
       `,
-      [nombre, email, hash]
+      [nombre, email, hash, validationToken]
     );
 
     return res.status(201).json({
@@ -85,7 +89,8 @@ exports.login = async (req, res) => {
           telefono,
           direccion,
           activo,
-          email_verificado
+          email_verificado,
+          email_verificacion_token
         FROM usuarios
         WHERE email = ?
       `,
@@ -141,7 +146,8 @@ exports.perfil = async (req, res) => {
           telefono,
           direccion,
           activo,
-          email_verificado
+          email_verificado,
+          email_verificacion_token
         FROM usuarios
         WHERE id = ?
       `,
@@ -164,7 +170,7 @@ exports.actualizarPerfil = async (req, res) => {
   try {
     const [rows] = await connection.execute(
       `
-        SELECT id, nombre, email, rol, telefono, direccion, activo, email_verificado
+        SELECT id, nombre, email, rol, telefono, direccion, activo, email_verificado, email_verificacion_token
         FROM usuarios
         WHERE id = ?
         LIMIT 1
@@ -236,7 +242,8 @@ exports.actualizarPerfil = async (req, res) => {
           telefono,
           direccion,
           activo,
-          email_verificado
+          email_verificado,
+          email_verificacion_token
         FROM usuarios
         WHERE id = ?
       `,

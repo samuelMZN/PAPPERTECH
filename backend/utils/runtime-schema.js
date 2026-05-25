@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { generateValidationToken } = require("./validation-token");
 
 async function columnExists(connection, tableName, columnName) {
   const [rows] = await connection.execute(
@@ -28,6 +29,24 @@ async function addColumnIfMissing(connection, tableName, columnName, definition)
 }
 
 let schemaPromise = null;
+
+async function populateMissingValidationTokens(connection) {
+  const [rows] = await connection.execute(
+    `
+      SELECT id
+      FROM usuarios
+      WHERE email_verificacion_token IS NULL
+         OR TRIM(email_verificacion_token) = ''
+    `
+  );
+
+  for (const row of rows) {
+    await connection.execute(
+      "UPDATE usuarios SET email_verificacion_token = ? WHERE id = ?",
+      [generateValidationToken(), row.id]
+    );
+  }
+}
 
 async function ensureRuntimeSchema() {
   if (schemaPromise) {
@@ -79,6 +98,8 @@ async function ensureRuntimeSchema() {
         "email_verificacion_expira",
         "DATETIME NULL AFTER email_verificacion_token"
       );
+
+      await populateMissingValidationTokens(connection);
     } finally {
       connection.release();
     }

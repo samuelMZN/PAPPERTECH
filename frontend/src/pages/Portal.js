@@ -446,13 +446,13 @@ function WorkerPortal() {
         token,
         body: {
           producto_id: Number(movementForm.producto_id),
-          tipo: movementForm.tipo,
+          tipo: "entrada",
           cantidad: Number(movementForm.cantidad),
-          motivo: movementForm.motivo,
+          motivo: "compra_proveedor",
           proveedor_id: movementForm.proveedor_id ? Number(movementForm.proveedor_id) : null,
           factura: movementForm.factura || "",
           precio_compra_unitario:
-            movementForm.tipo === "entrada" && movementForm.precio_compra_unitario
+            movementForm.precio_compra_unitario
               ? Number(movementForm.precio_compra_unitario)
               : null
         }
@@ -468,7 +468,7 @@ function WorkerPortal() {
         factura: ""
       });
       setLastMovementTicket(response.tirilla || null);
-      setSuccess("Movimiento registrado correctamente.");
+      setSuccess("Compra registrada correctamente.");
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -498,6 +498,11 @@ function WorkerPortal() {
 
   const activeOrders = orders.filter((order) =>
     ["pendiente", "en_preparacion", "enviado"].includes(order.estado)
+  );
+  const purchaseMovements = movements.filter(
+    (movement) =>
+      String(movement.tipo || "").toLowerCase() === "entrada" &&
+      String(movement.motivo || "").toLowerCase() === "compra_proveedor"
   );
   const pendingOrdersCount = orders.filter((order) => order.estado === "pendiente").length;
   const printableWorkerTickets = useMemo(
@@ -668,18 +673,18 @@ function WorkerPortal() {
             <article className="panel">
               <div className="panel-header">
                 <div>
-                  <h2>Registrar compra o ajuste</h2>
-                  <p>Entradas por compra a proveedor y salidas manuales de ajuste.</p>
+                  <h2>Registrar compra</h2>
+                  <p>Usa producto, proveedor y factura para dejar el kardex y el informe bien trazados.</p>
                 </div>
               </div>
 
               <div className="inventory-callout">
                 <div>
-                  <strong>Stock por movimientos</strong>
-                  <span>El stock no se edita a mano. Cada cambio crea un movimiento en el kardex.</span>
+                  <strong>Sin stock manual</strong>
+                  <span>La compra crea el movimiento, aumenta el stock y deja trazabilidad en el kardex.</span>
                 </div>
                 <div>
-                  <strong>Costo automatico</strong>
+                  <strong>Costo promedio</strong>
                   <span>Si registras una entrada con otro costo, el sistema recalcula el costo promedio del producto.</span>
                 </div>
               </div>
@@ -691,7 +696,7 @@ function WorkerPortal() {
                   onChange={handleMovementChange}
                   required
                 >
-                  <option value="">Selecciona un producto</option>
+                  <option value="">Producto a comprar</option>
                   {stockRows.map((row) => (
                     <option key={row.id} value={row.id}>
                       {row.nombre} - Stock {row.stock_actual}
@@ -699,23 +704,12 @@ function WorkerPortal() {
                   ))}
                 </select>
 
-                <select name="tipo" value={movementForm.tipo} onChange={handleMovementChange}>
-                  <option value="entrada">Entrada</option>
-                  <option value="salida">Salida</option>
-                </select>
-
-                <select name="motivo" value={movementForm.motivo} onChange={handleMovementChange}>
-                  <option value="compra_proveedor">Compra a proveedor</option>
-                  <option value="ajuste_manual">Ajuste manual</option>
-                  <option value="ajuste_salida">Salida manual</option>
-                </select>
-
                 <select
                   name="proveedor_id"
                   value={movementForm.proveedor_id}
                   onChange={handleMovementChange}
                 >
-                  <option value="">Proveedor opcional</option>
+                  <option value="">Proveedor</option>
                   {catalogos.proveedores?.map((proveedor) => (
                     <option key={proveedor.id} value={proveedor.id}>
                       {proveedor.nombre}
@@ -733,34 +727,34 @@ function WorkerPortal() {
                   required
                 />
 
-                {movementForm.tipo === "entrada" ? (
-                  <>
-                    <input
-                      name="precio_compra_unitario"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={movementForm.precio_compra_unitario}
-                      onChange={handleMovementChange}
-                      placeholder="Costo unitario de compra"
-                    />
-                    <input
-                      name="factura"
-                      value={movementForm.factura}
-                      onChange={handleMovementChange}
-                      placeholder="Factura o referencia de compra"
-                    />
-                  </>
-                ) : null}
+                <input
+                  name="precio_compra_unitario"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={movementForm.precio_compra_unitario}
+                  onChange={handleMovementChange}
+                  placeholder="Costo unitario"
+                />
+                <input
+                  name="factura"
+                  value={movementForm.factura}
+                  onChange={handleMovementChange}
+                  placeholder="Factura o referencia de compra"
+                />
 
                 <button className="btn btn-secondary" type="submit">
-                  Registrar movimiento
+                  Registrar compra
                 </button>
               </form>
 
+              <p className="form-helper">
+                Usa producto, proveedor y factura para dejar el kardex y el informe bien trazados.
+              </p>
+
               {lastMovementTicket ? (
                 <div className="ticket-card-wrap">
-                  <TicketCard title="Ultimo movimiento registrado" ticket={lastMovementTicket} />
+                  <TicketCard title="Ultima compra registrada" ticket={lastMovementTicket} />
                 </div>
               ) : null}
             </article>
@@ -768,17 +762,17 @@ function WorkerPortal() {
             <article className="panel">
               <div className="panel-header">
                 <div>
-                  <h2>Ultimos movimientos</h2>
-                  <p>Kardex reciente de entradas y salidas.</p>
+                  <h2>Compras recientes</h2>
+                  <p>Ultimas entradas registradas por compra a proveedor.</p>
                 </div>
               </div>
 
               <ul className="activity-list">
-                {movements.slice(0, 8).map((movement) => (
+                {purchaseMovements.slice(0, 8).map((movement) => (
                   <li key={movement.id}>
                     <strong>{movement.producto}</strong>
                     <span>
-                      {movement.tipo} {movement.cantidad_absoluta} - {movement.motivo}
+                      entrada {movement.cantidad_absoluta} - {movement.proveedor || "sin proveedor"}
                     </span>
                   </li>
                 ))}

@@ -982,30 +982,30 @@ button {
 
 .dashboard-shell {
   display: grid;
-  grid-template-columns: 212px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 184px minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
 }
 
 .dashboard-sidebar {
   position: sticky;
-  top: calc(var(--topbar-height) + 20px);
+  top: calc(var(--topbar-height) + 12px);
   display: grid;
-  gap: 16px;
-  padding: 18px 14px;
-  max-height: calc(100vh - var(--topbar-height) - 28px);
-  overflow: auto;
+  gap: 8px;
+  padding: 12px 10px;
+  max-height: none;
+  overflow: visible;
 }
 
 .dashboard-sidebar__header {
   display: grid;
-  gap: 6px;
+  gap: 2px;
 }
 
 .dashboard-sidebar__header h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 1.45rem;
+  font-size: 1.12rem;
 }
 
 .dashboard-main {
@@ -1016,7 +1016,7 @@ button {
 
 .section-tabs--sidebar {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .section-tab {
@@ -1049,13 +1049,13 @@ button {
 .section-tab__badge {
   display: inline-grid;
   place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
   background: #d94b58;
   color: #ffffff;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
   border: 1px solid #ef7a86;
 }
@@ -1063,11 +1063,12 @@ button {
 .section-tabs--sidebar .section-tab {
   width: 100%;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-radius: 18px;
+  padding: 9px 12px;
+  border-radius: 14px;
   background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
   color: var(--ink-soft);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  font-size: 0.92rem;
 }
 
 .section-tabs--sidebar .section-tab:hover {

@@ -1195,6 +1195,106 @@ button {
   color: var(--accent-strong);
 }
 
+.cart-confirmation-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.cart-confirmation-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 12, 24, 0.34);
+  backdrop-filter: blur(8px);
+}
+
+.cart-confirmation-card {
+  position: relative;
+  width: min(100%, 460px);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 32px 28px 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #2d3350;
+  box-shadow: 0 28px 70px rgba(6, 17, 38, 0.28);
+  text-align: center;
+}
+
+.cart-confirmation-card__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9c18, #f57a00);
+  color: #ffffff;
+  font-size: 2.1rem;
+  font-weight: 800;
+  box-shadow: 0 14px 28px rgba(245, 122, 0, 0.32);
+}
+
+.cart-confirmation-card h2 {
+  margin: 0;
+  color: #3a3f5c;
+  font-size: clamp(1.7rem, 3.2vw, 2.15rem);
+  line-height: 1.08;
+}
+
+.cart-confirmation-card p {
+  margin: 0;
+  color: #23262f;
+  font-size: 1rem;
+}
+
+.cart-confirmation-card__actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.cart-confirmation-card__actions .btn {
+  min-height: 58px;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cart-confirmation-card__actions .btn.btn-outline {
+  border-color: rgba(28, 34, 56, 0.78);
+  background: #ffffff;
+  color: #111319;
+}
+
+.cart-confirmation-card__actions .btn.btn-primary {
+  background: #ffffff;
+  border: 1px solid rgba(28, 34, 56, 0.78);
+  color: #111319;
+  box-shadow: none;
+}
+
+.cart-confirmation-card__actions .btn:hover {
+  transform: translateY(-1px);
+  background: #f8fafc;
+}
+
+.cart-confirmation-card__action-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
 .detail-list {
   display: grid;
   gap: 12px;

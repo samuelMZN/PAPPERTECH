@@ -169,7 +169,7 @@ function Home() {
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [cartDialogProduct, setCartDialogProduct] = useState(null);
   const [addingProductId, setAddingProductId] = useState(null);
   const nuevosRef = useRef(null);
   const descuentosRef = useRef(null);
@@ -223,6 +223,24 @@ function Home() {
 
     setTopbarSearchTarget(document.getElementById("topbar-feature-slot"));
   }, []);
+
+  useEffect(() => {
+    if (!cartDialogProduct) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setCartDialogProduct(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [cartDialogProduct]);
 
   const categoryShowcase = useMemo(
     () => buildCategoryShowcase(categorias, productos),
@@ -422,7 +440,6 @@ function Home() {
 
   const handleAddToCart = async (producto) => {
     setError("");
-    setSuccess("");
 
     if (Number(producto.stock || 0) <= 0) {
       setError(`${producto.nombre} esta agotado en este momento.`);
@@ -443,7 +460,7 @@ function Home() {
 
     try {
       await addToCart(producto.id, 1);
-      setSuccess(`${producto.nombre} se agrego a tu carrito.`);
+      setCartDialogProduct(producto);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -453,6 +470,15 @@ function Home() {
 
   const handlePromo = (producto) => {
     handleAddToCart(producto);
+  };
+
+  const closeCartDialog = () => {
+    setCartDialogProduct(null);
+  };
+
+  const openCartPage = () => {
+    setCartDialogProduct(null);
+    navigate("/carrito");
   };
 
   const searchDockSearch = (
@@ -472,6 +498,41 @@ function Home() {
     <section className="home-page">
       {topbarSearchTarget
         ? createPortal(<div className="topbar-search-dock">{searchDockSearch}</div>, topbarSearchTarget)
+        : null}
+
+      {cartDialogProduct && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="cart-confirmation-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cart-confirmation-title"
+              onClick={closeCartDialog}
+            >
+              <div className="cart-confirmation-modal__backdrop" />
+              <article
+                className="cart-confirmation-card"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="cart-confirmation-card__icon" aria-hidden="true">
+                  ✓
+                </div>
+                <h2 id="cart-confirmation-title">¡Producto agregado al carrito!</h2>
+                <p>No lo dejes escapar</p>
+                <div className="cart-confirmation-card__actions">
+                  <button type="button" className="btn btn-outline" onClick={closeCartDialog}>
+                    <span className="cart-confirmation-card__action-icon">＋</span>
+                    <span>Seguir comprando</span>
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={openCartPage}>
+                    <span className="cart-confirmation-card__action-icon">🛒</span>
+                    <span>Ver carrito</span>
+                  </button>
+                </div>
+              </article>
+            </div>,
+            document.body
+          )
         : null}
 
       <section className="search-dock search-dock--top">
@@ -559,7 +620,6 @@ function Home() {
 
       {loading ? <p className="status">Cargando vitrina...</p> : null}
       {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
 
       {!loading ? (
         <section className="category-grid">

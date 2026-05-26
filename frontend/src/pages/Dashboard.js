@@ -1143,25 +1143,14 @@ function Dashboard() {
           </div>
 
           {pendingOrdersCount > 0 ? (
-            <article className="dashboard-notice dashboard-notice--sidebar">
-              <div className="dashboard-notice__compact-row">
-                <p className="catalog-section__eyebrow">Pedidos pendientes</p>
-                <span className="section-tab__badge dashboard-notice__badge">{pendingOrdersCount}</span>
-              </div>
-              <strong>
-                {pendingOrdersCount === 1
-                  ? "1 pedido por revisar"
-                  : `${pendingOrdersCount} pedidos por revisar`}
-              </strong>
-
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setActiveTab("pedidos")}
-              >
-                Ir a pedidos
-              </button>
-            </article>
+            <button
+              type="button"
+              className="section-tab section-tab--notice"
+              onClick={() => setActiveTab("pedidos")}
+            >
+              <span className="section-tab--notice__label">Pedidos pendientes</span>
+              <span className="section-tab__badge dashboard-notice__badge">{pendingOrdersCount}</span>
+            </button>
           ) : null}
 
           <div className="section-tabs section-tabs--sidebar">

@@ -142,6 +142,19 @@ button {
   display: none;
 }
 
+.topbar:has(.topbar-feature-slot:empty) {
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.topbar:has(.topbar-feature-slot:empty) .topbar__main {
+  justify-self: start;
+}
+
+.topbar:has(.topbar-feature-slot:empty) .topbar-links {
+  justify-self: end;
+}
+
 .brand-group {
   display: grid;
   gap: 4px;
@@ -174,6 +187,14 @@ button {
   color: var(--muted);
   font-size: 0.88rem;
   max-width: 24ch;
+}
+
+.topbar:has(.topbar-feature-slot:empty) .brand-group {
+  max-width: 260px;
+}
+
+.topbar:has(.topbar-feature-slot:empty) .brand-copy {
+  max-width: 30ch;
 }
 
 .topbar-links {
@@ -1651,6 +1672,10 @@ button {
     gap: 16px;
   }
 
+  .topbar:has(.topbar-feature-slot:empty) {
+    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+  }
+
   .topbar-links {
     gap: 8px;
   }
@@ -1669,6 +1694,10 @@ button {
 
   .brand-group {
     max-width: 170px;
+  }
+
+  .topbar:has(.topbar-feature-slot:empty) .brand-group {
+    max-width: 220px;
   }
 }
 

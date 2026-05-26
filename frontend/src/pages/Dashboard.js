@@ -1333,8 +1333,8 @@ function Dashboard() {
             </div>
           </article>
 
-          <section className="dashboard-grid summary-support">
-            <article className="panel">
+          <section className="dashboard-grid summary-support dashboard-summary-overview">
+            <article className="panel dashboard-summary-card dashboard-summary-card--profile">
               <div className="panel-header">
                 <div>
                   <h2>Tu perfil</h2>
@@ -1358,7 +1358,7 @@ function Dashboard() {
               </div>
             </article>
 
-            <article className="panel">
+            <article className="panel dashboard-summary-card dashboard-summary-card--business">
               <div className="panel-header">
                 <div>
                   <h2>Resumen del negocio</h2>
@@ -1433,10 +1433,7 @@ function Dashboard() {
                 </div>
               </div>
             </article>
-          </section>
-
-          <section className="dashboard-grid bottom-grid summary-support">
-            <article className="panel">
+            <article className="panel dashboard-summary-card dashboard-summary-card--orders">
               <div className="panel-header">
                 <div>
                   <h2>Pedidos recientes</h2>
@@ -1456,7 +1453,7 @@ function Dashboard() {
               </ul>
             </article>
 
-            <article className="panel">
+            <article className="panel dashboard-summary-card dashboard-summary-card--inventory">
               <div className="panel-header">
                 <div>
                   <h2>Actividad de inventario</h2>
@@ -1476,7 +1473,7 @@ function Dashboard() {
               </ul>
             </article>
 
-            <article className="panel">
+            <article className="panel dashboard-summary-card dashboard-summary-card--alerts">
               <div className="panel-header">
                 <div>
                   <h2>Alertas de bajo stock</h2>

@@ -777,6 +777,34 @@ button {
   align-self: start;
 }
 
+.dashboard-summary-overview {
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    "profile business business"
+    "orders inventory alerts";
+  align-items: start;
+}
+
+.dashboard-summary-card--profile {
+  grid-area: profile;
+}
+
+.dashboard-summary-card--business {
+  grid-area: business;
+}
+
+.dashboard-summary-card--orders {
+  grid-area: orders;
+}
+
+.dashboard-summary-card--inventory {
+  grid-area: inventory;
+}
+
+.dashboard-summary-card--alerts {
+  grid-area: alerts;
+}
+
 .dashboard-grid--crud-stack {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
@@ -2884,8 +2912,18 @@ button {
   .admin-report__metrics,
   .admin-report__details,
   .admin-report__tables,
-  .admin-report__list {
+  .admin-report__list,
+  .dashboard-summary-overview {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-summary-overview {
+    grid-template-areas:
+      "profile"
+      "business"
+      "orders"
+      "inventory"
+      "alerts";
   }
 
   .stats-grid--report {

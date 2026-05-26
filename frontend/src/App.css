@@ -769,6 +769,14 @@ button {
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
 }
 
+.summary-support {
+  align-items: start;
+}
+
+.summary-support .panel {
+  align-self: start;
+}
+
 .dashboard-grid--crud-stack {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;

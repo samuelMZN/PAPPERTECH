@@ -160,8 +160,8 @@ button {
 
 .brand-logo {
   display: block;
-  width: clamp(180px, 19vw, 230px);
-  height: clamp(44px, 5vw, 58px);
+  width: clamp(140px, 15vw, 190px);
+  height: clamp(36px, 4vw, 48px);
   object-fit: cover;
   object-position: center;
   border-radius: 12px;

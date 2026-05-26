@@ -107,9 +107,9 @@ button {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(360px, 720px) minmax(250px, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
   padding: 16px 24px;
   border-bottom: 1px solid var(--line);
@@ -124,15 +124,18 @@ button {
   gap: 16px;
   min-width: 0;
   flex: 0 1 auto;
+  justify-self: start;
 }
 
 .topbar-feature-slot {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 620px;
+  width: 100%;
+  max-width: 720px;
   min-width: 0;
   align-self: center;
+  justify-self: center;
 }
 
 .topbar-feature-slot:empty {
@@ -175,14 +178,21 @@ button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
   min-width: 0;
+  white-space: nowrap;
+  justify-self: end;
 }
 
 .topbar-links a,
-.topbar-links button {
-  padding: 11px 14px;
+.topbar-links button,
+.topbar-links .cart-link,
+.topbar-links .topbar-link-with-badge,
+.topbar-links .user-chip {
+  min-width: 0;
+  flex: 0 1 auto;
+  padding: 10px 13px;
   border-radius: 999px;
   color: var(--ink-soft);
   text-align: center;
@@ -242,7 +252,13 @@ button {
 }
 
 .user-chip {
-  padding: 11px 16px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
@@ -1597,12 +1613,13 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: min(100%, 760px);
+  width: 100%;
   min-height: 48px;
 }
 
 .topbar-search-dock .store-search__input {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 46px;
   padding: 10px 18px;
   border-radius: 999px;
@@ -1623,6 +1640,29 @@ button {
   background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
   color: var(--ink);
   align-self: center;
+}
+
+@media (max-width: 1480px) {
+  .topbar {
+    grid-template-columns: minmax(220px, 1fr) minmax(300px, 620px) minmax(220px, 1fr);
+    gap: 16px;
+  }
+
+  .topbar-links {
+    gap: 8px;
+  }
+
+  .topbar-links a,
+  .topbar-links button,
+  .topbar-links .cart-link,
+  .topbar-links .topbar-link-with-badge,
+  .topbar-links .user-chip {
+    padding: 10px 12px;
+  }
+
+  .user-chip {
+    max-width: 190px;
+  }
 }
 
 .search-dock {

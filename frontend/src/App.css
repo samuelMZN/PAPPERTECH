@@ -108,9 +108,9 @@ button {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(180px, 220px) minmax(360px, 720px) minmax(420px, 1fr);
+  grid-template-columns: minmax(160px, 190px) minmax(280px, 560px) minmax(520px, 1fr);
   align-items: center;
-  gap: 20px;
+  gap: 14px;
   padding: 16px 24px;
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
@@ -132,7 +132,7 @@ button {
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 720px;
+  max-width: 560px;
   min-width: 0;
   align-self: center;
   justify-self: center;
@@ -180,7 +180,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: nowrap;
   min-width: 0;
   white-space: nowrap;
@@ -194,7 +194,7 @@ button {
 .topbar-links .user-chip {
   min-width: 0;
   flex: 0 1 auto;
-  padding: 10px 13px;
+  padding: 10px 12px;
   border-radius: 999px;
   color: var(--ink-soft);
   text-align: center;
@@ -256,7 +256,7 @@ button {
 .user-chip {
   display: inline-flex;
   align-items: center;
-  max-width: 220px;
+  max-width: 170px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1615,7 +1615,7 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
+  width: min(100%, 560px);
   min-height: 48px;
 }
 
@@ -1636,17 +1636,18 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding-inline: 18px;
+  padding-inline: 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
   color: var(--ink);
   align-self: center;
+  font-size: 0.96rem;
 }
 
 @media (max-width: 1480px) {
   .topbar {
-    grid-template-columns: minmax(170px, 200px) minmax(300px, 620px) minmax(360px, 1fr);
+    grid-template-columns: minmax(150px, 176px) minmax(240px, 470px) minmax(460px, 1fr);
     gap: 16px;
   }
 
@@ -1663,11 +1664,11 @@ button {
   }
 
   .user-chip {
-    max-width: 190px;
+    max-width: 150px;
   }
 
   .brand-group {
-    max-width: 190px;
+    max-width: 170px;
   }
 }
 

@@ -1163,6 +1163,24 @@ button {
   color: var(--ink-soft);
 }
 
+.dashboard-notice--sidebar {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 16px 14px;
+  border-radius: 18px;
+}
+
+.dashboard-notice--sidebar > div {
+  display: grid;
+  gap: 6px;
+}
+
+.dashboard-notice--sidebar .btn {
+  width: 100%;
+}
+
 .inventory-callout strong {
   color: var(--ink);
 }

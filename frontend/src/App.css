@@ -132,6 +132,7 @@ button {
   justify-content: center;
   flex: 1 1 620px;
   min-width: 0;
+  align-self: center;
 }
 
 .topbar-feature-slot:empty {
@@ -1597,20 +1598,22 @@ button {
   align-items: center;
   gap: 12px;
   width: min(100%, 760px);
+  min-height: 48px;
 }
 
 .topbar-search-dock .store-search__input {
   flex: 1 1 auto;
-  min-height: 48px;
-  padding: 12px 18px;
+  min-height: 46px;
+  padding: 10px 18px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  align-self: center;
 }
 
 .topbar-search-dock .store-search__count {
   flex: 0 0 auto;
-  min-height: 48px;
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1619,6 +1622,7 @@ button {
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
   color: var(--ink);
+  align-self: center;
 }
 
 .search-dock {

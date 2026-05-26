@@ -1142,17 +1142,6 @@ function Dashboard() {
             <h2>Panel admin</h2>
           </div>
 
-          {pendingOrdersCount > 0 ? (
-            <button
-              type="button"
-              className="section-tab section-tab--notice"
-              onClick={() => setActiveTab("pedidos")}
-            >
-              <span className="section-tab--notice__label">Pedidos pendientes</span>
-              <span className="section-tab__badge dashboard-notice__badge">{pendingOrdersCount}</span>
-            </button>
-          ) : null}
-
           <div className="section-tabs section-tabs--sidebar">
             {adminTabs.map((tab) => (
               <button

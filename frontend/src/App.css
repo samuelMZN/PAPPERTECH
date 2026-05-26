@@ -1067,15 +1067,15 @@ button {
   position: sticky;
   top: calc(var(--topbar-height) + 12px);
   display: grid;
-  gap: 6px;
-  padding: 10px 8px;
+  gap: 12px;
+  padding: 14px 12px;
   max-height: none;
   overflow: visible;
 }
 
 .dashboard-sidebar__header {
   display: grid;
-  gap: 2px;
+  gap: 6px;
 }
 
 .dashboard-sidebar__header h2 {
@@ -1092,7 +1092,7 @@ button {
 
 .section-tabs--sidebar {
   display: grid;
-  gap: 6px;
+  gap: 10px;
 }
 
 .section-tab {
@@ -1139,12 +1139,12 @@ button {
 .section-tabs--sidebar .section-tab {
   width: 100%;
   justify-content: space-between;
-  padding: 8px 11px;
-  border-radius: 14px;
+  padding: 10px 14px;
+  border-radius: 16px;
   background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
   color: var(--ink-soft);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  font-size: 0.9rem;
+  font-size: 0.94rem;
 }
 
 .section-tabs--sidebar .section-tab:hover {
@@ -1197,64 +1197,6 @@ button {
 
 .dashboard-notice span {
   color: var(--ink-soft);
-}
-
-.dashboard-notice--sidebar {
-  display: grid;
-  gap: 10px;
-  width: 100%;
-  margin: 0;
-  padding: 12px;
-  border-radius: 16px;
-}
-
-.dashboard-notice__compact-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.dashboard-notice__badge {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-}
-
-.dashboard-notice--sidebar strong {
-  font-size: 0.98rem;
-  line-height: 1.35;
-}
-
-.dashboard-notice--sidebar .btn {
-  width: 100%;
-  min-height: 40px;
-  padding: 10px 12px;
-  font-size: 0.92rem;
-}
-
-.section-tab--notice {
-  width: 100%;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at top right, rgba(110, 173, 255, 0.12), transparent 38%),
-    linear-gradient(135deg, rgba(35, 76, 129, 0.78), rgba(18, 39, 65, 0.96));
-  color: #f5fbff;
-  box-shadow: var(--soft-shadow);
-}
-
-.section-tab--notice:hover {
-  transform: translateX(2px);
-  background:
-    radial-gradient(circle at top right, rgba(110, 173, 255, 0.16), transparent 38%),
-    linear-gradient(135deg, rgba(43, 89, 149, 0.84), rgba(20, 44, 74, 0.98));
-}
-
-.section-tab--notice__label {
-  color: #f5fbff;
-  font-weight: 700;
 }
 
 .inventory-callout strong {

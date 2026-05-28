@@ -1,183 +1,260 @@
 const db = require("../config/db");
 const { logAudit } = require("../utils/audit");
 
+function normalizeMovementItems(body = {}) {
+  if (Array.isArray(body.items) && body.items.length > 0) {
+    return body.items;
+  }
+
+  return [
+    {
+      producto_id: body.producto_id,
+      cantidad: body.cantidad,
+      precio_compra_unitario: body.precio_compra_unitario
+    }
+  ];
+}
+
+function buildMovementTicketNumber(movementIds = []) {
+  if (movementIds.length === 0) {
+    return "M-0";
+  }
+
+  if (movementIds.length === 1) {
+    return `M-${movementIds[0]}`;
+  }
+
+  return `M-${movementIds[0]}-${movementIds[movementIds.length - 1]}`;
+}
+
 exports.movimiento = async (req, res) => {
   const {
-    producto_id,
     tipo,
-    cantidad,
     motivo = "ajuste_manual",
     proveedor_id = null,
     precio_compra_unitario = null,
     factura = ""
   } = req.body;
 
-  if (!producto_id || !tipo || !cantidad) {
-    return res.status(400).json({ message: "Producto, tipo y cantidad son obligatorios" });
+  const items = normalizeMovementItems(req.body);
+  const facturaNormalizada = String(factura || "").trim() || null;
+  const proveedorIdNormalizado = proveedor_id ? Number(proveedor_id) : null;
+
+  if (!tipo) {
+    return res.status(400).json({ message: "El tipo de movimiento es obligatorio" });
   }
 
   if (!["entrada", "salida"].includes(tipo)) {
     return res.status(400).json({ message: "Tipo de movimiento invalido" });
   }
 
-  if (Number(cantidad) <= 0) {
-    return res.status(400).json({ message: "La cantidad debe ser mayor que cero" });
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ message: "Debes agregar al menos un producto" });
   }
 
-  if (tipo === "entrada" && motivo === "compra_proveedor" && !proveedor_id) {
+  const invalidItem = items.find(
+    (item) => !item?.producto_id || !item?.cantidad || Number(item.cantidad) <= 0
+  );
+
+  if (invalidItem) {
+    return res.status(400).json({
+      message: "Cada linea debe tener producto y cantidad mayor que cero"
+    });
+  }
+
+  if (tipo === "entrada" && motivo === "compra_proveedor" && !proveedorIdNormalizado) {
     return res.status(400).json({
       message: "Debes seleccionar un proveedor para registrar una compra"
     });
   }
 
-  const precioCompraUnitario = Number(precio_compra_unitario || 0);
-  const cantidadNormalizada = Math.abs(Number(cantidad));
   const connection = await db.promise().getConnection();
 
   try {
     await connection.beginTransaction();
 
-    const [productos] = await connection.execute(
-      `
-        SELECT id, nombre, stock_actual, precio_mayor, precio_detal, margen_porcentaje
-        FROM productos
-        WHERE id = ?
-      `,
-      [producto_id]
-    );
-
-    if (productos.length === 0) {
-      await connection.rollback();
-      return res.status(404).json({ message: "Producto no encontrado" });
-    }
-
-    if (tipo === "salida" && productos[0].stock_actual < Number(cantidad)) {
-      await connection.rollback();
-      return res.status(400).json({ message: "Stock insuficiente para registrar la salida" });
-    }
-
-    const cantidadFirmada = tipo === "salida" ? -cantidadNormalizada : cantidadNormalizada;
-
-    const [insertResult] = await connection.execute(
-      `
-        INSERT INTO movimientos_inventario
-          (
-            producto_id,
-            cantidad,
-            tipo,
-            motivo,
-            proveedor_id,
-            factura_referencia,
-            usuario_id,
-            precio_unitario_referencia
-          )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        producto_id,
-        cantidadFirmada,
-        tipo,
-        motivo,
-        proveedor_id || null,
-        String(factura || "").trim() || null,
-        req.user.id,
-        tipo === "entrada" && precioCompraUnitario > 0 ? precioCompraUnitario : null
-      ]
-    );
-
-    let nuevoCostoPromedio = null;
-    let precioVentaAsignado = null;
-    let margenPorcentajeAplicado = Number(productos[0].margen_porcentaje || 0);
     let proveedorNombre = null;
 
-    if (tipo === "entrada" && precioCompraUnitario > 0) {
-      const stockAnterior = Number(productos[0].stock_actual || 0);
-      const costoAnterior = Number(productos[0].precio_mayor || 0);
-
-      nuevoCostoPromedio =
-        stockAnterior > 0
-          ? ((stockAnterior * costoAnterior) + (cantidadNormalizada * precioCompraUnitario)) /
-            (stockAnterior + cantidadNormalizada)
-          : precioCompraUnitario;
-
-      const averageCostRounded = Number(nuevoCostoPromedio.toFixed(2));
-      precioVentaAsignado = Number(
-        (averageCostRounded * (1 + margenPorcentajeAplicado / 100)).toFixed(2)
-      );
-      const updates = ["precio_mayor = ?", "precio_detal = ?"];
-      const updateValues = [averageCostRounded, precioVentaAsignado];
-
-      updateValues.push(producto_id);
-
-      await connection.execute(
-        `UPDATE productos SET ${updates.join(", ")} WHERE id = ?`,
-        updateValues
-      );
-    }
-
-    if (proveedor_id) {
+    if (proveedorIdNormalizado) {
       const [proveedores] = await connection.execute(
         "SELECT nombre FROM proveedores WHERE id = ? LIMIT 1",
-        [proveedor_id]
+        [proveedorIdNormalizado]
       );
       proveedorNombre = proveedores[0]?.nombre || null;
     }
 
-    await logAudit(connection, {
-      usuarioId: req.user.id,
-      accion: "crear",
-      tabla: "movimientos_inventario",
-      registroId: Number(insertResult.insertId),
-      valoresNuevos: {
-        movimiento_id: Number(insertResult.insertId),
-        producto_id: Number(producto_id),
-        producto: productos[0].nombre,
-        cantidad: cantidadFirmada,
-        tipo,
-        motivo,
-        proveedor_id: proveedor_id || null,
-        factura_referencia: String(factura || "").trim() || null,
-        precio_compra_unitario: precioCompraUnitario || null,
-        precio_compra_promedio: nuevoCostoPromedio
-          ? Number(nuevoCostoPromedio.toFixed(2))
-          : null,
-        margen_porcentaje_aplicado: margenPorcentajeAplicado,
-        precio_venta_asignado: precioVentaAsignado
-      },
-      ipAddress: req.ip
-    });
+    const ticketItems = [];
+    const movementIds = [];
+    let totalUnidades = 0;
+    let totalInvertido = 0;
+    let ultimoCostoPromedio = null;
+    let ultimoPrecioVenta = null;
+    let ultimoMargenAplicado = null;
+    let ultimoStockAntes;
+    let ultimoStockDespues;
+
+    for (const rawItem of items) {
+      const productoId = Number(rawItem.producto_id);
+      const cantidadNormalizada = Math.abs(Number(rawItem.cantidad));
+      const precioCompraUnitario = Number(
+        rawItem.precio_compra_unitario ?? precio_compra_unitario ?? 0
+      );
+
+      const [productos] = await connection.execute(
+        `
+          SELECT id, nombre, stock_actual, precio_mayor, precio_detal, margen_porcentaje
+          FROM productos
+          WHERE id = ?
+        `,
+        [productoId]
+      );
+
+      if (productos.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ message: "Producto no encontrado" });
+      }
+
+      const producto = productos[0];
+
+      if (tipo === "salida" && Number(producto.stock_actual || 0) < cantidadNormalizada) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: `Stock insuficiente para registrar la salida de ${producto.nombre}`
+        });
+      }
+
+      const cantidadFirmada = tipo === "salida" ? -cantidadNormalizada : cantidadNormalizada;
+      const stockAntes = Number(producto.stock_actual || 0);
+      const stockDespues =
+        tipo === "entrada" ? stockAntes + cantidadNormalizada : stockAntes - cantidadNormalizada;
+
+      const [insertResult] = await connection.execute(
+        `
+          INSERT INTO movimientos_inventario
+            (
+              producto_id,
+              cantidad,
+              tipo,
+              motivo,
+              proveedor_id,
+              factura_referencia,
+              usuario_id,
+              precio_unitario_referencia
+            )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          productoId,
+          cantidadFirmada,
+          tipo,
+          motivo,
+          proveedorIdNormalizado,
+          facturaNormalizada,
+          req.user.id,
+          tipo === "entrada" && precioCompraUnitario > 0 ? precioCompraUnitario : null
+        ]
+      );
+
+      let nuevoCostoPromedio = null;
+      let precioVentaAsignado = null;
+      const margenPorcentajeAplicado = Number(producto.margen_porcentaje || 0);
+
+      if (tipo === "entrada" && precioCompraUnitario > 0) {
+        const costoAnterior = Number(producto.precio_mayor || 0);
+
+        nuevoCostoPromedio =
+          stockAntes > 0
+            ? ((stockAntes * costoAnterior) + (cantidadNormalizada * precioCompraUnitario)) /
+              (stockAntes + cantidadNormalizada)
+            : precioCompraUnitario;
+
+        const averageCostRounded = Number(nuevoCostoPromedio.toFixed(2));
+        precioVentaAsignado = Number(
+          (averageCostRounded * (1 + margenPorcentajeAplicado / 100)).toFixed(2)
+        );
+
+        await connection.execute(
+          "UPDATE productos SET precio_mayor = ?, precio_detal = ? WHERE id = ?",
+          [averageCostRounded, precioVentaAsignado, productoId]
+        );
+      }
+
+      await logAudit(connection, {
+        usuarioId: req.user.id,
+        accion: "crear",
+        tabla: "movimientos_inventario",
+        registroId: Number(insertResult.insertId),
+        valoresNuevos: {
+          movimiento_id: Number(insertResult.insertId),
+          producto_id: productoId,
+          producto: producto.nombre,
+          cantidad: cantidadFirmada,
+          tipo,
+          motivo,
+          proveedor_id: proveedorIdNormalizado,
+          factura_referencia: facturaNormalizada,
+          precio_compra_unitario: precioCompraUnitario || null,
+          precio_compra_promedio: nuevoCostoPromedio
+            ? Number(nuevoCostoPromedio.toFixed(2))
+            : null,
+          margen_porcentaje_aplicado: margenPorcentajeAplicado,
+          precio_venta_asignado: precioVentaAsignado
+        },
+        ipAddress: req.ip
+      });
+
+      movementIds.push(Number(insertResult.insertId));
+      totalUnidades += cantidadNormalizada;
+      totalInvertido +=
+        tipo === "entrada" && precioCompraUnitario > 0
+          ? Number((precioCompraUnitario * cantidadNormalizada).toFixed(2))
+          : 0;
+      ultimoCostoPromedio = nuevoCostoPromedio
+        ? Number(nuevoCostoPromedio.toFixed(2))
+        : ultimoCostoPromedio;
+      ultimoPrecioVenta = precioVentaAsignado ?? ultimoPrecioVenta;
+      ultimoMargenAplicado = margenPorcentajeAplicado;
+      ultimoStockAntes = stockAntes;
+      ultimoStockDespues = stockDespues;
+
+      ticketItems.push({
+        producto_id: productoId,
+        nombre: producto.nombre,
+        cantidad: cantidadNormalizada,
+        precio_unitario: tipo === "entrada" ? precioCompraUnitario : 0,
+        subtotal:
+          tipo === "entrada" && precioCompraUnitario > 0
+            ? Number((precioCompraUnitario * cantidadNormalizada).toFixed(2))
+            : 0
+      });
+    }
 
     await connection.commit();
 
     return res.status(201).json({
-      message: "Movimiento registrado",
-      movimiento_id: Number(insertResult.insertId),
-      precio_compra_promedio: nuevoCostoPromedio
-        ? Number(nuevoCostoPromedio.toFixed(2))
-        : undefined,
+      message:
+        items.length > 1 ? "Compra registrada correctamente" : "Movimiento registrado",
+      movimiento_id: movementIds[movementIds.length - 1],
+      precio_compra_promedio: ultimoCostoPromedio || undefined,
       tirilla: {
         tipo: tipo === "entrada" ? "compra" : "salida",
-        numero: `M-${insertResult.insertId}`,
+        numero: buildMovementTicketNumber(movementIds),
         fecha: new Date().toISOString(),
-        producto: productos[0].nombre,
-        cantidad: cantidadNormalizada,
+        producto: ticketItems[0]?.nombre || "-",
+        cantidad: totalUnidades,
         movimiento: tipo,
         motivo,
         proveedor: proveedorNombre,
-        factura: String(factura || "").trim() || null,
-        costo_unitario: tipo === "entrada" && precioCompraUnitario > 0 ? precioCompraUnitario : null,
-        costo_promedio: nuevoCostoPromedio ? Number(nuevoCostoPromedio.toFixed(2)) : null,
-        margen_porcentaje: tipo === "entrada" ? margenPorcentajeAplicado : null,
-        precio_venta_calculado: precioVentaAsignado,
-        total:
-          tipo === "entrada" && precioCompraUnitario > 0
-            ? Number((precioCompraUnitario * cantidadNormalizada).toFixed(2))
-            : null,
-        stock_antes: Number(productos[0].stock_actual || 0),
-        stock_despues:
-          tipo === "entrada"
-            ? Number(productos[0].stock_actual || 0) + cantidadNormalizada
-            : Number(productos[0].stock_actual || 0) - cantidadNormalizada
+        factura: facturaNormalizada,
+        costo_unitario:
+          ticketItems.length === 1 ? ticketItems[0].precio_unitario || null : null,
+        costo_promedio: ticketItems.length === 1 ? ultimoCostoPromedio : null,
+        margen_porcentaje: ticketItems.length === 1 ? ultimoMargenAplicado : null,
+        precio_venta_calculado: ticketItems.length === 1 ? ultimoPrecioVenta : null,
+        total: totalInvertido > 0 ? Number(totalInvertido.toFixed(2)) : null,
+        stock_antes: ticketItems.length === 1 ? ultimoStockAntes : undefined,
+        stock_despues: ticketItems.length === 1 ? ultimoStockDespues : undefined,
+        items: ticketItems
       }
     });
   } catch (error) {

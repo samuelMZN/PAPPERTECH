@@ -354,6 +354,12 @@ button {
   width: 100%;
 }
 
+.btn-sm {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+}
+
 .page-section {
   display: grid;
   gap: 24px;
@@ -1241,6 +1247,69 @@ button {
 .admin-inline-summary small {
   color: var(--muted);
   line-height: 1.6;
+}
+
+.purchase-batch-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, #214773 6%), var(--surface-soft));
+}
+
+.purchase-batch-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.purchase-batch-panel__header strong {
+  display: block;
+  color: var(--ink);
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.purchase-batch-panel__header span {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.purchase-batch-panel__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.table-wrap--purchase-draft {
+  overflow-x: auto;
+}
+
+.data-table--purchase-draft td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.purchase-batch-panel__empty {
+  margin: 0;
+}
+
+.purchase-batch-panel__totals {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 4px;
+  color: var(--muted);
+}
+
+.purchase-batch-panel__totals strong {
+  color: var(--ink);
+  font-size: 1.05rem;
 }
 
 .message,

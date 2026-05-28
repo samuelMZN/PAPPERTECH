@@ -284,6 +284,7 @@ function Dashboard() {
   const [userForm, setUserForm] = useState(initialUserForm);
   const [productForm, setProductForm] = useState(initialProductForm);
   const [purchaseForm, setPurchaseForm] = useState(initialPurchaseForm);
+  const [purchaseItems, setPurchaseItems] = useState([]);
   const [purchaseFilters, setPurchaseFilters] = useState(initialPurchaseFilters);
   const [categoryForm, setCategoryForm] = useState(initialCategoryForm);
   const [brandForm, setBrandForm] = useState(initialBrandForm);
@@ -547,6 +548,11 @@ function Dashboard() {
     () => sortedProducts.find((item) => String(item.id) === String(purchaseForm.producto_id)) || null,
     [purchaseForm.producto_id, sortedProducts]
   );
+  const purchaseDraftSummary = useMemo(() => ({
+    lineas: purchaseItems.length,
+    unidades: purchaseItems.reduce((total, item) => total + Number(item.cantidad || 0), 0),
+    total: purchaseItems.reduce((total, item) => total + Number(item.subtotal || 0), 0)
+  }), [purchaseItems]);
 
   const pendingOrdersCount = useMemo(
     () => orders.filter((order) => order.estado === "pendiente").length,
@@ -686,6 +692,101 @@ function Dashboard() {
   const handlePurchaseChange = (event) => {
     const { name, value } = event.target;
     setPurchaseForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const buildPurchaseDraftItem = useCallback((product, formValues) => {
+    if (!product) {
+      throw new Error("Selecciona un producto para agregarlo a la compra.");
+    }
+
+    const cantidad = Number(formValues.cantidad);
+    const costoUnitario = Number(formValues.precio_compra_unitario);
+
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      throw new Error("Ingresa una cantidad valida para la compra.");
+    }
+
+    if (!Number.isFinite(costoUnitario) || costoUnitario <= 0) {
+      throw new Error("Ingresa el costo unitario de compra.");
+    }
+
+    return {
+      producto_id: Number(product.id),
+      nombre: product.nombre,
+      detalle: [
+        product.categoria || "Sin categoria",
+        product.marca || "Sin marca",
+        `stock ${Number(product.stock || 0)}`
+      ].join(" - "),
+      cantidad,
+      precio_compra_unitario: costoUnitario,
+      subtotal: Number((cantidad * costoUnitario).toFixed(2))
+    };
+  }, []);
+
+  const addPurchaseItem = () => {
+    resetMessages();
+
+    try {
+      const draftItem = buildPurchaseDraftItem(selectedPurchaseProduct, purchaseForm);
+
+      setPurchaseItems((current) => {
+        const existingIndex = current.findIndex(
+          (item) =>
+            String(item.producto_id) === String(draftItem.producto_id) &&
+            Number(item.precio_compra_unitario) === Number(draftItem.precio_compra_unitario)
+        );
+
+        if (existingIndex === -1) {
+          return [...current, draftItem];
+        }
+
+        const nextItems = [...current];
+        const existingItem = nextItems[existingIndex];
+        nextItems[existingIndex] = {
+          ...existingItem,
+          cantidad: Number(existingItem.cantidad || 0) + draftItem.cantidad,
+          subtotal: Number(
+            (
+              (Number(existingItem.cantidad || 0) + draftItem.cantidad) *
+              Number(existingItem.precio_compra_unitario || 0)
+            ).toFixed(2)
+          )
+        };
+        return nextItems;
+      });
+
+      setPurchaseForm((current) => ({
+        ...current,
+        producto_id: "",
+        cantidad: "1",
+        precio_compra_unitario: ""
+      }));
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  const removePurchaseItem = (productoId, precioUnitario) => {
+    setPurchaseItems((current) =>
+      current.filter(
+        (item) =>
+          !(
+            String(item.producto_id) === String(productoId) &&
+            Number(item.precio_compra_unitario) === Number(precioUnitario)
+          )
+      )
+    );
+  };
+
+  const clearPurchaseDraft = () => {
+    setPurchaseItems([]);
+    setPurchaseForm((current) => ({
+      ...current,
+      producto_id: "",
+      cantidad: "1",
+      precio_compra_unitario: ""
+    }));
   };
 
   const handlePurchaseFilterChange = (event) => {
@@ -858,25 +959,44 @@ function Dashboard() {
     resetMessages();
 
     try {
+      if (!purchaseForm.proveedor_id) {
+        throw new Error("Selecciona un proveedor para registrar la compra.");
+      }
+
+      const draftItems = [...purchaseItems];
+
+      if (purchaseForm.producto_id) {
+        draftItems.push(buildPurchaseDraftItem(selectedPurchaseProduct, purchaseForm));
+      }
+
+      if (draftItems.length === 0) {
+        throw new Error("Agrega al menos un producto a la compra.");
+      }
+
       const response = await apiRequest("/inventario", {
         method: "POST",
         token,
         body: {
-          producto_id: Number(purchaseForm.producto_id),
           tipo: "entrada",
-          cantidad: Number(purchaseForm.cantidad),
           motivo: purchaseForm.motivo || "compra_proveedor",
           proveedor_id: purchaseForm.proveedor_id ? Number(purchaseForm.proveedor_id) : null,
           factura: purchaseForm.factura || "",
-          precio_compra_unitario: purchaseForm.precio_compra_unitario
-            ? Number(purchaseForm.precio_compra_unitario)
-            : null
+          items: draftItems.map((item) => ({
+            producto_id: Number(item.producto_id),
+            cantidad: Number(item.cantidad),
+            precio_compra_unitario: Number(item.precio_compra_unitario)
+          }))
         }
       });
 
       setPurchaseForm(initialPurchaseForm);
+      setPurchaseItems([]);
       setLastPurchaseTicket(response.tirilla || null);
-      setSuccess("Compra al proveedor registrada correctamente.");
+      setSuccess(
+        draftItems.length > 1
+          ? "Compra por lote registrada correctamente."
+          : "Compra al proveedor registrada correctamente."
+      );
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -1829,20 +1949,6 @@ function Dashboard() {
 
             <form className="form-grid form-grid--spacious" onSubmit={submitPurchase}>
               <select
-                name="producto_id"
-                value={purchaseForm.producto_id}
-                onChange={handlePurchaseChange}
-                required
-              >
-                <option value="">Producto a comprar</option>
-                {sortedProducts.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {buildProductOptionLabel(item, { includeStock: true })}
-                  </option>
-                ))}
-              </select>
-
-              <select
                 name="proveedor_id"
                 value={purchaseForm.proveedor_id}
                 onChange={handlePurchaseChange}
@@ -1883,6 +1989,19 @@ function Dashboard() {
                 placeholder="Documento o referencia del proveedor"
               />
 
+              <select
+                name="producto_id"
+                value={purchaseForm.producto_id}
+                onChange={handlePurchaseChange}
+              >
+                <option value="">Producto a comprar</option>
+                {sortedProducts.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {buildProductOptionLabel(item, { includeStock: true })}
+                  </option>
+                ))}
+              </select>
+
               {selectedPurchaseProduct ? (
                 <div className="admin-inline-summary">
                   <strong>{selectedPurchaseProduct.nombre}</strong>
@@ -1900,12 +2019,83 @@ function Dashboard() {
                 </div>
               ) : null}
 
+              <div className="purchase-batch-panel">
+                <div className="purchase-batch-panel__header">
+                  <div>
+                    <strong>Compra en curso</strong>
+                    <span>
+                      {purchaseDraftSummary.lineas === 0
+                        ? "Agrega varias lineas y registralas con un solo documento."
+                        : `${purchaseDraftSummary.lineas} linea(s) - ${purchaseDraftSummary.unidades} unidad(es)`}
+                    </span>
+                  </div>
+                  <div className="purchase-batch-panel__actions">
+                    <button type="button" className="btn btn-outline" onClick={addPurchaseItem}>
+                      Agregar producto
+                    </button>
+                    {purchaseItems.length > 0 ? (
+                      <button type="button" className="btn btn-outline" onClick={clearPurchaseDraft}>
+                        Vaciar compra
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                {purchaseItems.length > 0 ? (
+                  <div className="table-wrap table-wrap--purchase-draft">
+                    <table className="data-table data-table--purchase-draft">
+                      <thead>
+                        <tr>
+                          <th>Producto</th>
+                          <th>Cantidad</th>
+                          <th>Costo unitario</th>
+                          <th>Subtotal</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {purchaseItems.map((item) => (
+                          <tr key={`${item.producto_id}-${item.precio_compra_unitario}`}>
+                            <td>
+                              <strong>{item.nombre}</strong>
+                              <small>{item.detalle}</small>
+                            </td>
+                            <td>{item.cantidad}</td>
+                            <td>{formatCurrency(item.precio_compra_unitario)}</td>
+                            <td>{formatCurrency(item.subtotal)}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-sm"
+                                onClick={() => removePurchaseItem(item.producto_id, item.precio_compra_unitario)}
+                              >
+                                Quitar
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="status empty-state purchase-batch-panel__empty">
+                    Todavia no has agregado productos a esta compra.
+                  </p>
+                )}
+
+                <div className="purchase-batch-panel__totals">
+                  <span>{purchaseDraftSummary.unidades} unidades en total</span>
+                  <strong>{formatCurrency(purchaseDraftSummary.total)}</strong>
+                </div>
+              </div>
+
               <div className="form-actions form-actions--stacked">
                 <button className="btn btn-secondary" type="submit">
                   Registrar compra
                 </button>
                 <p className="form-note form-note--block">
-                  Usa producto, proveedor y documento de compra para dejar el kardex y el informe bien trazados.
+                  Puedes cargar varios productos y registrarlos en un solo documento de compra para dejar el kardex y
+                  el informe bien trazados.
                 </p>
               </div>
             </form>

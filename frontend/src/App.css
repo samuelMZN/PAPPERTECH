@@ -143,8 +143,8 @@ button {
 }
 
 .topbar:has(.topbar-feature-slot:empty) {
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 24px;
 }
 
 .topbar:has(.topbar-feature-slot:empty) .topbar__main {
@@ -190,11 +190,11 @@ button {
 }
 
 .topbar:has(.topbar-feature-slot:empty) .brand-group {
-  max-width: 260px;
+  max-width: 320px;
 }
 
 .topbar:has(.topbar-feature-slot:empty) .brand-copy {
-  max-width: 30ch;
+  max-width: 34ch;
 }
 
 .topbar-links {
@@ -1798,7 +1798,7 @@ button {
   }
 
   .topbar:has(.topbar-feature-slot:empty) {
-    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+    grid-template-columns: minmax(240px, 290px) minmax(0, 1fr);
   }
 
   .topbar-links {
@@ -1822,7 +1822,7 @@ button {
   }
 
   .topbar:has(.topbar-feature-slot:empty) .brand-group {
-    max-width: 220px;
+    max-width: 270px;
   }
 }
 

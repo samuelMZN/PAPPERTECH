@@ -6,5 +6,6 @@ const router = express.Router();
 const adminOnly = authMiddleware.allowRoles("administrador");
 
 router.get("/admin", authMiddleware, adminOnly, dashboardController.getAdminResumen);
+router.get("/admin/reportes", authMiddleware, adminOnly, dashboardController.getAdminReportes);
 
 module.exports = router;

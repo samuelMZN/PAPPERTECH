@@ -83,6 +83,7 @@ const adminTabs = [
   { id: "pedidos", label: "Pedidos" },
   { id: "productos", label: "Productos" },
   { id: "compras", label: "Compras" },
+  { id: "reportes", label: "Reportes" },
   { id: "devoluciones", label: "Devoluciones" },
   { id: "usuarios", label: "Usuarios" },
   { id: "categorias", label: "Categorias" },
@@ -130,6 +131,14 @@ const initialPurchaseFilters = {
   fecha_hasta: "",
   producto_id: "",
   factura: ""
+};
+
+const initialSalesReportFilters = {
+  periodo: "mes",
+  fecha_desde: "",
+  fecha_hasta: "",
+  producto_id: "",
+  proveedor_id: ""
 };
 
 const initialCategoryForm = {
@@ -244,6 +253,33 @@ function buildPurchaseReportPath(filters = {}) {
   return query ? `/inventario/reportes/compras?${query}` : "/inventario/reportes/compras";
 }
 
+function buildSalesReportPath(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.periodo) {
+    params.set("periodo", filters.periodo);
+  }
+
+  if (filters.fecha_desde) {
+    params.set("fecha_desde", filters.fecha_desde);
+  }
+
+  if (filters.fecha_hasta) {
+    params.set("fecha_hasta", filters.fecha_hasta);
+  }
+
+  if (filters.producto_id) {
+    params.set("producto_id", filters.producto_id);
+  }
+
+  if (filters.proveedor_id) {
+    params.set("proveedor_id", filters.proveedor_id);
+  }
+
+  const query = params.toString();
+  return query ? `/dashboard/admin/reportes?${query}` : "/dashboard/admin/reportes";
+}
+
 async function fetchDashboardData(token, purchaseFilters) {
   return Promise.all([
     apiRequest("/auth/perfil", { token }),
@@ -286,6 +322,7 @@ function Dashboard() {
   const [purchaseForm, setPurchaseForm] = useState(initialPurchaseForm);
   const [purchaseItems, setPurchaseItems] = useState([]);
   const [purchaseFilters, setPurchaseFilters] = useState(initialPurchaseFilters);
+  const [salesReportFilters, setSalesReportFilters] = useState(initialSalesReportFilters);
   const [categoryForm, setCategoryForm] = useState(initialCategoryForm);
   const [brandForm, setBrandForm] = useState(initialBrandForm);
   const [providerForm, setProviderForm] = useState(initialProviderForm);
@@ -302,6 +339,25 @@ function Dashboard() {
     por_producto: [],
     por_factura: []
   });
+  const [salesReport, setSalesReport] = useState({
+    filtros: initialSalesReportFilters,
+    resumen: {
+      ventas_validas: 0,
+      productos_vendidos: 0,
+      unidades_vendidas: 0,
+      ingresos_totales: 0,
+      costo_total_estimado: 0,
+      utilidad_bruta: 0,
+      margen_bruto: 0,
+      ticket_promedio: 0
+    },
+    por_producto: [],
+    por_proveedor: [],
+    por_categoria: [],
+    por_periodo: [],
+    notas: []
+  });
+  const [salesReportLoading, setSalesReportLoading] = useState(false);
   const [orderNotice, setOrderNotice] = useState("");
   const knownPendingOrdersRef = useRef(new Set());
 
@@ -346,19 +402,44 @@ function Dashboard() {
     }
   }, [purchaseFilters, token]);
 
+  const loadSalesReport = useCallback(async () => {
+    setError("");
+    setSalesReportLoading(true);
+
+    try {
+      const reportData = await apiRequest(buildSalesReportPath(salesReportFilters), { token });
+      setSalesReport(reportData);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSalesReportLoading(false);
+    }
+  }, [salesReportFilters, token]);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   useEffect(() => {
+    if (activeTab !== "reportes") {
+      return;
+    }
+
+    loadSalesReport();
+  }, [activeTab, loadSalesReport]);
+
+  useEffect(() => {
     const intervalId = window.setInterval(() => {
       loadData({ silent: true });
+      if (activeTab === "reportes") {
+        loadSalesReport();
+      }
     }, 20000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [loadData]);
+  }, [activeTab, loadData, loadSalesReport]);
 
   useEffect(() => {
     if (!orderNotice) {
@@ -543,6 +624,10 @@ function Dashboard() {
     () => Object.fromEntries(products.map((item) => [String(item.id), item])),
     [products]
   );
+  const providersById = useMemo(
+    () => Object.fromEntries((catalogos.proveedores || []).map((item) => [String(item.id), item])),
+    [catalogos.proveedores]
+  );
 
   const selectedPurchaseProduct = useMemo(
     () => sortedProducts.find((item) => String(item.id) === String(purchaseForm.producto_id)) || null,
@@ -619,6 +704,76 @@ function Dashboard() {
 
     return tags;
   }, [productsById, purchaseFilters]);
+  const salesReportCards = useMemo(() => {
+    const resumen = salesReport?.resumen || {};
+
+    return [
+      {
+        id: "ventas",
+        label: "Pedidos con venta",
+        value: Number(resumen.ventas_validas || 0),
+        note: `${Number(resumen.productos_vendidos || 0)} productos vendidos`,
+        tone: "neutral"
+      },
+      {
+        id: "unidades",
+        label: "Unidades vendidas",
+        value: Number(resumen.unidades_vendidas || 0),
+        note: "Total de unidades en el periodo",
+        tone: "neutral"
+      },
+      {
+        id: "ingresos",
+        label: "Ingresos",
+        value: formatCurrency(resumen.ingresos_totales || 0),
+        note: `Ticket prom. ${formatCurrency(resumen.ticket_promedio || 0)}`,
+        tone: "warning"
+      },
+      {
+        id: "costos",
+        label: "Costo estimado",
+        value: formatCurrency(resumen.costo_total_estimado || 0),
+        note: "Costo estimado usando costo promedio actual",
+        tone: "warning"
+      },
+      {
+        id: "utilidad",
+        label: "Utilidad bruta",
+        value: formatSignedCurrency(resumen.utilidad_bruta || 0),
+        note: `Margen ${formatPercent(resumen.margen_bruto || 0)}`,
+        tone: Number(resumen.utilidad_bruta || 0) >= 0 ? "positive" : "negative"
+      }
+    ];
+  }, [salesReport]);
+  const activeSalesFilterCount = useMemo(
+    () => Object.values(salesReportFilters).filter((value) => String(value || "").trim() !== "").length,
+    [salesReportFilters]
+  );
+  const salesReportFilterTags = useMemo(() => {
+    const tags = [];
+
+    if (salesReportFilters.periodo && salesReportFilters.periodo !== "personalizado") {
+      tags.push(`Periodo: ${salesReportFilters.periodo}`);
+    }
+
+    if (salesReportFilters.fecha_desde || salesReportFilters.fecha_hasta) {
+      const desde = salesReportFilters.fecha_desde || "inicio";
+      const hasta = salesReportFilters.fecha_hasta || "hoy";
+      tags.push(`Rango: ${desde} - ${hasta}`);
+    }
+
+    if (salesReportFilters.producto_id) {
+      const selectedProduct = productsById[String(salesReportFilters.producto_id)];
+      tags.push(selectedProduct ? `Producto: ${selectedProduct.nombre}` : "Producto seleccionado");
+    }
+
+    if (salesReportFilters.proveedor_id) {
+      const selectedProvider = providersById[String(salesReportFilters.proveedor_id)];
+      tags.push(selectedProvider ? `Proveedor: ${selectedProvider.nombre}` : "Proveedor seleccionado");
+    }
+
+    return tags;
+  }, [productsById, providersById, salesReportFilters]);
   const printableOrderTickets = useMemo(
     () =>
       orders
@@ -792,6 +947,32 @@ function Dashboard() {
   const handlePurchaseFilterChange = (event) => {
     const { name, value } = event.target;
     setPurchaseFilters((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSalesReportFilterChange = (event) => {
+    const { name, value } = event.target;
+
+    setSalesReportFilters((current) => {
+      if (name === "periodo") {
+        return {
+          ...current,
+          periodo: value
+        };
+      }
+
+      if (name === "fecha_desde" || name === "fecha_hasta") {
+        return {
+          ...current,
+          [name]: value,
+          periodo: "personalizado"
+        };
+      }
+
+      return {
+        ...current,
+        [name]: value
+      };
+    });
   };
 
   const resetMessages = () => {
@@ -1005,6 +1186,10 @@ function Dashboard() {
 
   const clearPurchaseFilters = () => {
     setPurchaseFilters(initialPurchaseFilters);
+  };
+
+  const clearSalesReportFilters = () => {
+    setSalesReportFilters(initialSalesReportFilters);
   };
 
   const deleteProduct = async (item, mode = "deactivate") => {
@@ -2336,6 +2521,314 @@ function Dashboard() {
                     }}
                   />
                 ))}
+            </div>
+          </article>
+        </section>
+      ) : null}
+
+      {activeTab === "reportes" ? (
+        <section className="dashboard-grid dashboard-grid--crud-stack">
+          <article className="panel panel--sales-report">
+            <div className="panel-header">
+              <div>
+                <h2>Reportes de ventas y utilidad</h2>
+                <p>
+                  Consulta cuanto vendiste, cuanto estimas haber ganado y como se mueve la venta por
+                  producto, proveedor, categoria y periodo.
+                </p>
+              </div>
+            </div>
+
+            <form
+              className="filter-toolbar filter-toolbar--report purchase-report-filters"
+              onSubmit={(event) => event.preventDefault()}
+            >
+              <div className="purchase-report-filters__intro">
+                <div className="purchase-report-filters__copy">
+                  <span className="eyebrow purchase-report-filters__eyebrow">Filtros del reporte</span>
+                  <p>
+                    Revisa ventas del dia, la semana, el mes, el ano o un rango personalizado sin
+                    perder de vista producto y proveedor.
+                  </p>
+                </div>
+                <div className="purchase-report-filters__meta">
+                  <span className="purchase-report-filters__badge">
+                    {activeSalesFilterCount} {activeSalesFilterCount === 1 ? "activo" : "activos"}
+                  </span>
+                </div>
+              </div>
+
+              {salesReportFilterTags.length ? (
+                <div className="purchase-report-filters__tags" aria-label="Resumen de filtros del reporte">
+                  {salesReportFilterTags.map((tag) => (
+                    <span key={tag} className="purchase-report-filters__tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
+              <label className="form-field-group purchase-report-filters__field">
+                <span>Periodo</span>
+                <select name="periodo" value={salesReportFilters.periodo} onChange={handleSalesReportFilterChange}>
+                  <option value="dia">Dia</option>
+                  <option value="semana">Semana</option>
+                  <option value="mes">Mes</option>
+                  <option value="anio">Ano</option>
+                  <option value="personalizado">Personalizado</option>
+                </select>
+              </label>
+
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--date">
+                <span>Desde</span>
+                <input
+                  name="fecha_desde"
+                  type="date"
+                  value={salesReportFilters.fecha_desde}
+                  onChange={handleSalesReportFilterChange}
+                />
+              </label>
+
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--date">
+                <span>Hasta</span>
+                <input
+                  name="fecha_hasta"
+                  type="date"
+                  value={salesReportFilters.fecha_hasta}
+                  onChange={handleSalesReportFilterChange}
+                />
+              </label>
+
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--product">
+                <span>Producto</span>
+                <select
+                  name="producto_id"
+                  value={salesReportFilters.producto_id}
+                  onChange={handleSalesReportFilterChange}
+                >
+                  <option value="">Todos los productos</option>
+                  {sortedProducts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {buildProductOptionLabel(item)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="form-field-group purchase-report-filters__field purchase-report-filters__field--product">
+                <span>Proveedor</span>
+                <select
+                  name="proveedor_id"
+                  value={salesReportFilters.proveedor_id}
+                  onChange={handleSalesReportFilterChange}
+                >
+                  <option value="">Todos los proveedores</option>
+                  {catalogos.proveedores.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="purchase-report-filters__action">
+                <button className="btn btn-outline" type="button" onClick={clearSalesReportFilters}>
+                  Limpiar filtros
+                </button>
+              </div>
+            </form>
+
+            {salesReportLoading ? <p className="status">Actualizando reporte...</p> : null}
+
+            <div className="stats-grid stats-grid--report stats-grid--compact stats-grid--purchase">
+              {salesReportCards.map((card) => (
+                <article key={card.id} className={`stat-card stat-card--${card.tone}`}>
+                  <small className="stat-card__label">{card.label}</small>
+                  <strong>{card.value}</strong>
+                  <span>{card.note}</span>
+                </article>
+              ))}
+            </div>
+
+            {salesReport.notas?.length ? (
+              <div className="report-note-list" aria-label="Notas del reporte">
+                {salesReport.notas.map((note) => (
+                  <p key={note} className="report-note">
+                    {note}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="dashboard-grid">
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Rentabilidad por producto</h2>
+                    <p>Cuanto vende y cuanto deja cada producto en el periodo seleccionado.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Proveedor</th>
+                        <th>Unidades</th>
+                        <th>Ventas</th>
+                        <th>Costo est.</th>
+                        <th>Utilidad</th>
+                        <th>Margen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.por_producto.length > 0 ? (
+                        salesReport.por_producto.map((item) => (
+                          <tr key={`sales-product-${item.producto_id}`}>
+                            <td>
+                              <strong>{item.producto}</strong>
+                              <small>{item.categoria}</small>
+                            </td>
+                            <td>{item.proveedor}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.ingresos_totales)}</td>
+                            <td>{formatCurrency(item.costo_total_estimado)}</td>
+                            <td>{formatSignedCurrency(item.utilidad_bruta)}</td>
+                            <td>{formatPercent(item.margen_bruto)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7">No hay ventas por producto con los filtros actuales.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Productos vendidos por proveedor</h2>
+                    <p>Mide cuantos productos y unidades se movieron asociados a cada proveedor.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Proveedor</th>
+                        <th>Productos</th>
+                        <th>Unidades</th>
+                        <th>Ventas</th>
+                        <th>Utilidad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.por_proveedor.length > 0 ? (
+                        salesReport.por_proveedor.map((item) => (
+                          <tr key={`sales-provider-${item.proveedor_id}`}>
+                            <td>{item.proveedor}</td>
+                            <td>{item.productos_vendidos}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.ingresos_totales)}</td>
+                            <td>{formatSignedCurrency(item.utilidad_bruta)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5">No hay ventas por proveedor con los filtros actuales.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div className="dashboard-grid">
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Rendimiento por categoria</h2>
+                    <p>Compara que familias venden mas y cuales dejan mejor utilidad.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Categoria</th>
+                        <th>Productos</th>
+                        <th>Unidades</th>
+                        <th>Ventas</th>
+                        <th>Utilidad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.por_categoria.length > 0 ? (
+                        salesReport.por_categoria.map((item) => (
+                          <tr key={`sales-category-${item.categoria_id}`}>
+                            <td>{item.categoria}</td>
+                            <td>{item.productos_vendidos}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.ingresos_totales)}</td>
+                            <td>{formatSignedCurrency(item.utilidad_bruta)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5">No hay ventas por categoria con los filtros actuales.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Evolucion del periodo</h2>
+                    <p>Te deja ver si el periodo se esta moviendo por dia o por mes.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Periodo</th>
+                        <th>Pedidos</th>
+                        <th>Unidades</th>
+                        <th>Ventas</th>
+                        <th>Utilidad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.por_periodo.length > 0 ? (
+                        salesReport.por_periodo.map((item) => (
+                          <tr key={`sales-period-${item.periodo}`}>
+                            <td>{item.periodo}</td>
+                            <td>{item.pedidos}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.ingresos_totales)}</td>
+                            <td>{formatSignedCurrency(item.utilidad_bruta)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5">No hay movimientos de ventas para el periodo seleccionado.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
             </div>
           </article>
         </section>

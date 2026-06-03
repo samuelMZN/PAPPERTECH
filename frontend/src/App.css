@@ -551,6 +551,26 @@ button {
   margin-bottom: 22px;
 }
 
+.panel--sales-report .panel-header {
+  margin-bottom: 22px;
+}
+
+.report-note-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.report-note {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .admin-report {
   display: grid;
   gap: 22px;

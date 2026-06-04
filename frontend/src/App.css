@@ -143,8 +143,10 @@ button {
 }
 
 .topbar:has(.topbar-feature-slot:empty) {
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  gap: 18px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .topbar:has(.topbar-feature-slot:empty) .topbar__main {
@@ -190,11 +192,19 @@ button {
 }
 
 .topbar:has(.topbar-feature-slot:empty) .brand-group {
-  max-width: 320px;
+  gap: 2px;
+  max-width: 360px;
 }
 
 .topbar:has(.topbar-feature-slot:empty) .brand-copy {
-  max-width: 34ch;
+  max-width: 42ch;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.topbar:has(.topbar-feature-slot:empty) .brand-logo {
+  width: clamp(96px, 9vw, 126px);
+  height: clamp(24px, 2.5vw, 32px);
 }
 
 .topbar-links {
@@ -1828,7 +1838,7 @@ button {
   }
 
   .topbar:has(.topbar-feature-slot:empty) {
-    grid-template-columns: minmax(240px, 290px) minmax(0, 1fr);
+    grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
   }
 
   .topbar-links {
@@ -1852,7 +1862,7 @@ button {
   }
 
   .topbar:has(.topbar-feature-slot:empty) .brand-group {
-    max-width: 270px;
+    max-width: 300px;
   }
 }
 

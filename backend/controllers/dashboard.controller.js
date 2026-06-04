@@ -313,31 +313,100 @@ exports.getAdminReportes = async (req, res) => {
       fechaDesdeQuery,
       fechaHastaQuery
     );
-
+    const selectedProductId = productoId ? Number(productoId) : null;
+    const selectedProviderId = proveedorId ? Number(proveedorId) : null;
     const salesExpr = "dp.cantidad * dp.precio_unitario";
     const costExpr = "dp.cantidad * COALESCE(pr.precio_mayor, 0)";
     const profitExpr = `(${salesExpr} - ${costExpr})`;
-    const filters = [
-      "p.estado != 'cancelado'",
-      "p.fecha_pedido >= ?",
-      "p.fecha_pedido <= ?"
-    ];
-    const values = [
-      formatDateTimeForSql(fechaDesde),
-      formatDateTimeForSql(fechaHasta)
-    ];
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const monthlyChartStart = new Date(now.getFullYear(), now.getMonth() - 11, 1, 0, 0, 0, 0);
+    const monthlyChartEnd = endOfDay(now);
 
-    if (productoId) {
-      filters.push("dp.producto_id = ?");
-      values.push(Number(productoId));
-    }
+    const buildSalesScope = (from, to) => {
+      const filters = [
+        "p.estado != 'cancelado'",
+        "p.fecha_pedido >= ?",
+        "p.fecha_pedido <= ?"
+      ];
+      const values = [formatDateTimeForSql(from), formatDateTimeForSql(to)];
 
-    if (proveedorId) {
-      filters.push("pr.proveedor_id = ?");
-      values.push(Number(proveedorId));
-    }
+      if (selectedProductId) {
+        filters.push("dp.producto_id = ?");
+        values.push(selectedProductId);
+      }
 
-    const whereClause = filters.join(" AND ");
+      if (selectedProviderId) {
+        filters.push("pr.proveedor_id = ?");
+        values.push(selectedProviderId);
+      }
+
+      return {
+        whereClause: filters.join(" AND "),
+        values
+      };
+    };
+
+    const buildMovementScope = (from, to, extraFilters = []) => {
+      const filters = ["m.creado_en >= ?", "m.creado_en <= ?"];
+      const values = [formatDateTimeForSql(from), formatDateTimeForSql(to)];
+
+      if (selectedProductId) {
+        filters.push("m.producto_id = ?");
+        values.push(selectedProductId);
+      }
+
+      if (selectedProviderId) {
+        filters.push("m.proveedor_id = ?");
+        values.push(selectedProviderId);
+      }
+
+      for (const item of extraFilters) {
+        filters.push(item.clause);
+        if (Array.isArray(item.values)) {
+          values.push(...item.values);
+        } else if (item.values !== undefined) {
+          values.push(item.values);
+        }
+      }
+
+      return {
+        whereClause: filters.join(" AND "),
+        values
+      };
+    };
+
+    const mapMargin = (income, profit) =>
+      Number(income || 0) > 0 ? toNumber((Number(profit || 0) / Number(income || 0)) * 100, 2) : 0;
+
+    const normalizeSummary = (row = {}) => {
+      const ingresosTotales = toNumber(row.ingresos_totales);
+      const costoTotalEstimado = toNumber(row.costo_total_estimado);
+      const utilidadBruta = toNumber(row.utilidad_bruta);
+      const ventasValidas = toNumber(row.ventas_validas);
+      return {
+        ventas_validas: ventasValidas,
+        productos_vendidos: toNumber(row.productos_vendidos),
+        unidades_vendidas: toNumber(row.unidades_vendidas),
+        ingresos_totales: ingresosTotales,
+        costo_total_estimado: costoTotalEstimado,
+        utilidad_bruta: utilidadBruta,
+        margen_bruto: mapMargin(ingresosTotales, utilidadBruta),
+        ticket_promedio: ventasValidas > 0 ? toNumber(ingresosTotales / ventasValidas, 2) : 0
+      };
+    };
+
+    const selectedSalesScope = buildSalesScope(fechaDesde, fechaHasta);
+    const todaySalesScope = buildSalesScope(todayStart, todayEnd);
+    const monthSalesScope = buildSalesScope(monthStart, todayEnd);
+    const purchaseMovementScope = buildMovementScope(fechaDesde, fechaHasta, [
+      { clause: "m.tipo = 'entrada'" },
+      { clause: "m.motivo = 'compra_proveedor'" }
+    ]);
+    const workerMovementScope = buildMovementScope(fechaDesde, fechaHasta);
+    const monthlyChartScope = buildSalesScope(monthlyChartStart, monthlyChartEnd);
     const periodBucket = resolvePeriodBucket(periodoAplicado, fechaDesde, fechaHasta);
 
     const [
@@ -345,7 +414,21 @@ exports.getAdminReportes = async (req, res) => {
       productosRows,
       proveedoresRows,
       categoriasRows,
-      periodosRows
+      periodosRows,
+      resumenHoyRows,
+      resumenMesRows,
+      stockBajoRows,
+      ultimasVentasRows,
+      graficaMensualRows,
+      clientesRegistradosRows,
+      clientesNuevosRows,
+      clientesTopRows,
+      clientesHistorialRows,
+      productosProveedorRows,
+      comprasProveedorRows,
+      ventasTrabajadorRows,
+      movimientosTrabajadorRows,
+      actividadesTrabajadorRows
     ] = await Promise.all([
       db.promise().query(
         `
@@ -359,11 +442,9 @@ exports.getAdminReportes = async (req, res) => {
           FROM detalles_pedido dp
           JOIN pedidos p ON p.id = dp.pedido_id
           JOIN productos pr ON pr.id = dp.producto_id
-          LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
-          LEFT JOIN categorias cat ON cat.id = pr.categoria_id
-          WHERE ${whereClause}
+          WHERE ${selectedSalesScope.whereClause}
         `,
-        values
+        selectedSalesScope.values
       ),
       db.promise().query(
         `
@@ -381,12 +462,11 @@ exports.getAdminReportes = async (req, res) => {
           JOIN productos pr ON pr.id = dp.producto_id
           LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
           LEFT JOIN categorias cat ON cat.id = pr.categoria_id
-          WHERE ${whereClause}
+          WHERE ${selectedSalesScope.whereClause}
           GROUP BY pr.id, pr.nombre, categoria, proveedor
-          ORDER BY ingresos_totales DESC, unidades_vendidas DESC, producto ASC
-          LIMIT 25
+          ORDER BY unidades_vendidas DESC, ingresos_totales DESC, producto ASC
         `,
-        values
+        selectedSalesScope.values
       ),
       db.promise().query(
         `
@@ -402,12 +482,11 @@ exports.getAdminReportes = async (req, res) => {
           JOIN pedidos p ON p.id = dp.pedido_id
           JOIN productos pr ON pr.id = dp.producto_id
           LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
-          LEFT JOIN categorias cat ON cat.id = pr.categoria_id
-          WHERE ${whereClause}
+          WHERE ${selectedSalesScope.whereClause}
           GROUP BY proveedor_id, proveedor
-          ORDER BY ingresos_totales DESC, unidades_vendidas DESC, proveedor ASC
+          ORDER BY unidades_vendidas DESC, ingresos_totales DESC, proveedor ASC
         `,
-        values
+        selectedSalesScope.values
       ),
       db.promise().query(
         `
@@ -422,13 +501,12 @@ exports.getAdminReportes = async (req, res) => {
           FROM detalles_pedido dp
           JOIN pedidos p ON p.id = dp.pedido_id
           JOIN productos pr ON pr.id = dp.producto_id
-          LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
           LEFT JOIN categorias cat ON cat.id = pr.categoria_id
-          WHERE ${whereClause}
+          WHERE ${selectedSalesScope.whereClause}
           GROUP BY categoria_id, categoria
-          ORDER BY ingresos_totales DESC, unidades_vendidas DESC, categoria ASC
+          ORDER BY unidades_vendidas DESC, ingresos_totales DESC, categoria ASC
         `,
-        values
+        selectedSalesScope.values
       ),
       db.promise().query(
         `
@@ -443,93 +521,447 @@ exports.getAdminReportes = async (req, res) => {
           FROM detalles_pedido dp
           JOIN pedidos p ON p.id = dp.pedido_id
           JOIN productos pr ON pr.id = dp.producto_id
-          LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
-          LEFT JOIN categorias cat ON cat.id = pr.categoria_id
-          WHERE ${whereClause}
+          WHERE ${selectedSalesScope.whereClause}
           GROUP BY periodo
           ORDER BY periodo ASC
         `,
-        values
+        selectedSalesScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            COUNT(DISTINCT p.id) AS ventas_validas,
+            COALESCE(SUM(${salesExpr}), 0) AS ingresos_totales,
+            COALESCE(SUM(${costExpr}), 0) AS costo_total_estimado,
+            COALESCE(SUM(${profitExpr}), 0) AS utilidad_bruta
+          FROM detalles_pedido dp
+          JOIN pedidos p ON p.id = dp.pedido_id
+          JOIN productos pr ON pr.id = dp.producto_id
+          WHERE ${todaySalesScope.whereClause}
+        `,
+        todaySalesScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            COUNT(DISTINCT p.id) AS ventas_validas,
+            COALESCE(SUM(${salesExpr}), 0) AS ingresos_totales,
+            COALESCE(SUM(${costExpr}), 0) AS costo_total_estimado,
+            COALESCE(SUM(${profitExpr}), 0) AS utilidad_bruta
+          FROM detalles_pedido dp
+          JOIN pedidos p ON p.id = dp.pedido_id
+          JOIN productos pr ON pr.id = dp.producto_id
+          WHERE ${monthSalesScope.whereClause}
+        `,
+        monthSalesScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            pr.id AS producto_id,
+            pr.nombre AS producto,
+            COALESCE(cat.nombre, 'Sin categoria') AS categoria,
+            COALESCE(prov.nombre, 'Sin proveedor') AS proveedor,
+            pr.stock_actual,
+            pr.stock_minimo
+          FROM productos pr
+          LEFT JOIN categorias cat ON cat.id = pr.categoria_id
+          LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
+          WHERE pr.activo = 1
+            AND pr.stock_actual <= pr.stock_minimo
+            ${selectedProductId ? "AND pr.id = ?" : ""}
+            ${selectedProviderId ? "AND pr.proveedor_id = ?" : ""}
+          ORDER BY (pr.stock_minimo - pr.stock_actual) DESC, pr.stock_actual ASC, pr.nombre ASC
+          LIMIT 12
+        `,
+        [
+          ...(selectedProductId ? [selectedProductId] : []),
+          ...(selectedProviderId ? [selectedProviderId] : [])
+        ]
+      ),
+      db.promise().query(
+        `
+          SELECT
+            p.id AS pedido_id,
+            p.fecha_pedido,
+            u.nombre AS cliente,
+            p.estado,
+            COUNT(DISTINCT dp.id) AS lineas,
+            COALESCE(SUM(dp.cantidad), 0) AS unidades_vendidas,
+            COALESCE(SUM(${salesExpr}), 0) AS total_venta
+          FROM pedidos p
+          JOIN usuarios u ON u.id = p.usuario_id
+          JOIN detalles_pedido dp ON dp.pedido_id = p.id
+          JOIN productos pr ON pr.id = dp.producto_id
+          WHERE ${selectedSalesScope.whereClause}
+          GROUP BY p.id, p.fecha_pedido, u.nombre, p.estado
+          ORDER BY p.fecha_pedido DESC, p.id DESC
+          LIMIT 10
+        `,
+        selectedSalesScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            DATE_FORMAT(p.fecha_pedido, '%Y-%m') AS periodo,
+            COUNT(DISTINCT p.id) AS pedidos,
+            COALESCE(SUM(dp.cantidad), 0) AS unidades_vendidas,
+            COALESCE(SUM(${salesExpr}), 0) AS ingresos_totales,
+            COALESCE(SUM(${profitExpr}), 0) AS utilidad_bruta
+          FROM pedidos p
+          JOIN detalles_pedido dp ON dp.pedido_id = p.id
+          JOIN productos pr ON pr.id = dp.producto_id
+          WHERE ${monthlyChartScope.whereClause}
+          GROUP BY periodo
+          ORDER BY periodo ASC
+        `,
+        monthlyChartScope.values
+      ),
+      db.promise().query(`
+        SELECT COUNT(*) AS total
+        FROM usuarios
+        WHERE rol = 'cliente' AND activo = 1
+      `),
+      db.promise().query(
+        `
+          SELECT
+            DATE_FORMAT(creado_en, '%Y-%m') AS periodo,
+            COUNT(*) AS clientes_nuevos
+          FROM usuarios
+          WHERE rol = 'cliente'
+            AND creado_en >= ?
+            AND creado_en <= ?
+          GROUP BY periodo
+          ORDER BY periodo ASC
+        `,
+        [formatDateTimeForSql(monthlyChartStart), formatDateTimeForSql(monthlyChartEnd)]
+      ),
+      db.promise().query(
+        `
+          SELECT
+            u.id AS cliente_id,
+            u.nombre AS cliente,
+            u.email,
+            COUNT(DISTINCT p.id) AS compras,
+            COALESCE(SUM(dp.cantidad), 0) AS unidades_vendidas,
+            COALESCE(SUM(${salesExpr}), 0) AS total_gastado,
+            MAX(p.fecha_pedido) AS ultima_compra
+          FROM pedidos p
+          JOIN usuarios u ON u.id = p.usuario_id
+          JOIN detalles_pedido dp ON dp.pedido_id = p.id
+          JOIN productos pr ON pr.id = dp.producto_id
+          WHERE ${selectedSalesScope.whereClause}
+          GROUP BY u.id, u.nombre, u.email
+          ORDER BY total_gastado DESC, compras DESC, cliente ASC
+          LIMIT 12
+        `,
+        selectedSalesScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            p.id AS pedido_id,
+            p.fecha_pedido,
+            u.id AS cliente_id,
+            u.nombre AS cliente,
+            COALESCE(SUM(dp.cantidad), 0) AS unidades_vendidas,
+            COALESCE(SUM(${salesExpr}), 0) AS total_venta
+          FROM pedidos p
+          JOIN usuarios u ON u.id = p.usuario_id
+          JOIN detalles_pedido dp ON dp.pedido_id = p.id
+          JOIN productos pr ON pr.id = dp.producto_id
+          WHERE ${selectedSalesScope.whereClause}
+          GROUP BY p.id, p.fecha_pedido, u.id, u.nombre
+          ORDER BY p.fecha_pedido DESC, p.id DESC
+          LIMIT 20
+        `,
+        selectedSalesScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            COALESCE(prov.id, 0) AS proveedor_id,
+            COALESCE(prov.nombre, 'Sin proveedor') AS proveedor,
+            COUNT(pr.id) AS productos,
+            COALESCE(SUM(CASE WHEN pr.activo = 1 THEN 1 ELSE 0 END), 0) AS productos_activos,
+            COALESCE(SUM(pr.stock_actual), 0) AS stock_total
+          FROM productos pr
+          LEFT JOIN proveedores prov ON prov.id = pr.proveedor_id
+          WHERE 1 = 1
+            ${selectedProductId ? "AND pr.id = ?" : ""}
+            ${selectedProviderId ? "AND pr.proveedor_id = ?" : ""}
+          GROUP BY proveedor_id, proveedor
+          ORDER BY productos DESC, stock_total DESC, proveedor ASC
+        `,
+        [
+          ...(selectedProductId ? [selectedProductId] : []),
+          ...(selectedProviderId ? [selectedProviderId] : [])
+        ]
+      ),
+      db.promise().query(
+        `
+          SELECT
+            COALESCE(prov.id, 0) AS proveedor_id,
+            COALESCE(prov.nombre, 'Sin proveedor') AS proveedor,
+            COUNT(*) AS compras,
+            COUNT(DISTINCT m.producto_id) AS productos,
+            COALESCE(SUM(ABS(m.cantidad)), 0) AS unidades,
+            COALESCE(SUM(ABS(m.cantidad) * COALESCE(m.precio_unitario_referencia, 0)), 0) AS total_invertido,
+            MAX(m.creado_en) AS ultima_compra
+          FROM movimientos_inventario m
+          LEFT JOIN proveedores prov ON prov.id = m.proveedor_id
+          WHERE ${purchaseMovementScope.whereClause}
+          GROUP BY proveedor_id, proveedor
+          ORDER BY total_invertido DESC, compras DESC, proveedor ASC
+        `,
+        purchaseMovementScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            u.id AS trabajador_id,
+            u.nombre AS trabajador,
+            COUNT(DISTINCT m.pedido_id) AS ventas,
+            COALESCE(SUM(ABS(m.cantidad)), 0) AS unidades_vendidas,
+            COALESCE(SUM(ABS(m.cantidad) * COALESCE(dp.precio_unitario, 0)), 0) AS total_venta,
+            MAX(m.creado_en) AS ultima_venta
+          FROM movimientos_inventario m
+          JOIN usuarios u ON u.id = m.usuario_id AND u.rol = 'trabajador'
+          LEFT JOIN detalles_pedido dp
+            ON dp.pedido_id = m.pedido_id
+            AND dp.producto_id = m.producto_id
+          WHERE ${buildMovementScope(fechaDesde, fechaHasta, [
+            { clause: "m.tipo = 'salida'" },
+            { clause: "m.motivo = 'venta_pedido'" }
+          ]).whereClause}
+          GROUP BY u.id, u.nombre
+          ORDER BY total_venta DESC, ventas DESC, trabajador ASC
+        `,
+        buildMovementScope(fechaDesde, fechaHasta, [
+          { clause: "m.tipo = 'salida'" },
+          { clause: "m.motivo = 'venta_pedido'" }
+        ]).values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            u.id AS trabajador_id,
+            u.nombre AS trabajador,
+            COUNT(*) AS movimientos,
+            COALESCE(SUM(CASE WHEN m.tipo = 'entrada' THEN ABS(m.cantidad) ELSE 0 END), 0) AS entradas,
+            COALESCE(SUM(CASE WHEN m.tipo = 'salida' THEN ABS(m.cantidad) ELSE 0 END), 0) AS salidas,
+            MAX(m.creado_en) AS ultimo_movimiento
+          FROM movimientos_inventario m
+          JOIN usuarios u ON u.id = m.usuario_id AND u.rol = 'trabajador'
+          WHERE ${workerMovementScope.whereClause}
+          GROUP BY u.id, u.nombre
+          ORDER BY movimientos DESC, trabajador ASC
+        `,
+        workerMovementScope.values
+      ),
+      db.promise().query(
+        `
+          SELECT
+            u.id AS trabajador_id,
+            u.nombre AS trabajador,
+            COUNT(*) AS actividades,
+            GROUP_CONCAT(DISTINCT a.accion ORDER BY a.accion ASC SEPARATOR ', ') AS acciones,
+            MAX(a.creado_en) AS ultima_actividad
+          FROM registros_auditoria a
+          JOIN usuarios u ON u.id = a.usuario_id AND u.rol = 'trabajador'
+          WHERE a.creado_en >= ?
+            AND a.creado_en <= ?
+          GROUP BY u.id, u.nombre
+          ORDER BY actividades DESC, trabajador ASC
+          LIMIT 12
+        `,
+        [formatDateTimeForSql(fechaDesde), formatDateTimeForSql(fechaHasta)]
       )
     ]);
 
-    const resumen = resumenRows[0][0] || {};
-    const ingresosTotales = toNumber(resumen.ingresos_totales);
-    const costoTotalEstimado = toNumber(resumen.costo_total_estimado);
-    const utilidadBruta = toNumber(resumen.utilidad_bruta);
-    const ventasValidas = toNumber(resumen.ventas_validas);
-    const margenBruto = ingresosTotales > 0 ? (utilidadBruta / ingresosTotales) * 100 : 0;
-    const ticketPromedio = ventasValidas > 0 ? ingresosTotales / ventasValidas : 0;
+    const resumen = normalizeSummary(resumenRows[0][0] || {});
+    const resumenHoy = normalizeSummary(resumenHoyRows[0][0] || {});
+    const resumenMes = normalizeSummary(resumenMesRows[0][0] || {});
+
+    const porProducto = productosRows[0].map((item) => {
+      const ingresos = toNumber(item.ingresos_totales);
+      const utilidad = toNumber(item.utilidad_bruta);
+      return {
+        ...item,
+        unidades_vendidas: toNumber(item.unidades_vendidas),
+        ingresos_totales: ingresos,
+        costo_total_estimado: toNumber(item.costo_total_estimado),
+        utilidad_bruta: utilidad,
+        margen_bruto: mapMargin(ingresos, utilidad)
+      };
+    });
+
+    const porProveedor = proveedoresRows[0].map((item) => {
+      const ingresos = toNumber(item.ingresos_totales);
+      const utilidad = toNumber(item.utilidad_bruta);
+      return {
+        ...item,
+        productos_vendidos: toNumber(item.productos_vendidos),
+        unidades_vendidas: toNumber(item.unidades_vendidas),
+        ingresos_totales: ingresos,
+        costo_total_estimado: toNumber(item.costo_total_estimado),
+        utilidad_bruta: utilidad,
+        margen_bruto: mapMargin(ingresos, utilidad)
+      };
+    });
+
+    const porCategoria = categoriasRows[0].map((item) => {
+      const ingresos = toNumber(item.ingresos_totales);
+      const utilidad = toNumber(item.utilidad_bruta);
+      return {
+        ...item,
+        productos_vendidos: toNumber(item.productos_vendidos),
+        unidades_vendidas: toNumber(item.unidades_vendidas),
+        ingresos_totales: ingresos,
+        costo_total_estimado: toNumber(item.costo_total_estimado),
+        utilidad_bruta: utilidad,
+        margen_bruto: mapMargin(ingresos, utilidad)
+      };
+    });
+
+    const porPeriodo = periodosRows[0].map((item) => {
+      const ingresos = toNumber(item.ingresos_totales);
+      const utilidad = toNumber(item.utilidad_bruta);
+      return {
+        ...item,
+        pedidos: toNumber(item.pedidos),
+        productos_vendidos: toNumber(item.productos_vendidos),
+        unidades_vendidas: toNumber(item.unidades_vendidas),
+        ingresos_totales: ingresos,
+        costo_total_estimado: toNumber(item.costo_total_estimado),
+        utilidad_bruta: utilidad,
+        margen_bruto: mapMargin(ingresos, utilidad)
+      };
+    });
+
+    const chartLookup = new Map(
+      graficaMensualRows[0].map((item) => [
+        item.periodo,
+        {
+          periodo: item.periodo,
+          pedidos: toNumber(item.pedidos),
+          unidades_vendidas: toNumber(item.unidades_vendidas),
+          ingresos_totales: toNumber(item.ingresos_totales),
+          utilidad_bruta: toNumber(item.utilidad_bruta)
+        }
+      ])
+    );
+
+    const graficaMensual = [];
+    for (let offset = 11; offset >= 0; offset -= 1) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      const key = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
+      graficaMensual.push(
+        chartLookup.get(key) || {
+          periodo: key,
+          pedidos: 0,
+          unidades_vendidas: 0,
+          ingresos_totales: 0,
+          utilidad_bruta: 0
+        }
+      );
+    }
+
+    const comprasProveedor = comprasProveedorRows[0].map((item) => ({
+      ...item,
+      compras: toNumber(item.compras),
+      productos: toNumber(item.productos),
+      unidades: toNumber(item.unidades),
+      total_invertido: toNumber(item.total_invertido)
+    }));
 
     return res.json({
       filtros: {
         periodo: periodoAplicado,
         fecha_desde: formatDateOnly(fechaDesde),
         fecha_hasta: formatDateOnly(fechaHasta),
-        producto_id: productoId ? String(productoId) : "",
-        proveedor_id: proveedorId ? String(proveedorId) : ""
+        producto_id: selectedProductId ? String(selectedProductId) : "",
+        proveedor_id: selectedProviderId ? String(selectedProviderId) : ""
       },
-      resumen: {
-        ventas_validas: ventasValidas,
-        productos_vendidos: toNumber(resumen.productos_vendidos),
-        unidades_vendidas: toNumber(resumen.unidades_vendidas),
-        ingresos_totales: ingresosTotales,
-        costo_total_estimado: costoTotalEstimado,
-        utilidad_bruta: utilidadBruta,
-        margen_bruto: toNumber(margenBruto, 2),
-        ticket_promedio: toNumber(ticketPromedio, 2)
+      resumen,
+      resumen_rapido: {
+        ventas_hoy: resumenHoy.ingresos_totales,
+        ganancias_hoy: resumenHoy.utilidad_bruta,
+        ventas_mes: resumenMes.ingresos_totales,
+        ganancias_mes: resumenMes.utilidad_bruta,
+        clientes_registrados: toNumber(clientesRegistradosRows[0][0]?.total),
+        productos_stock_bajo: stockBajoRows[0].length
       },
-      por_producto: productosRows[0].map((item) => ({
+      stock_bajo: stockBajoRows[0].map((item) => ({
         ...item,
-        unidades_vendidas: toNumber(item.unidades_vendidas),
-        ingresos_totales: toNumber(item.ingresos_totales),
-        costo_total_estimado: toNumber(item.costo_total_estimado),
-        utilidad_bruta: toNumber(item.utilidad_bruta),
-        margen_bruto:
-          Number(item.ingresos_totales || 0) > 0
-            ? toNumber((Number(item.utilidad_bruta || 0) / Number(item.ingresos_totales || 0)) * 100, 2)
-            : 0
+        stock_actual: toNumber(item.stock_actual),
+        stock_minimo: toNumber(item.stock_minimo)
       })),
-      por_proveedor: proveedoresRows[0].map((item) => ({
+      top_productos: porProducto.slice(0, 10),
+      productos_menos_vendidos: [...porProducto]
+        .sort((a, b) => a.unidades_vendidas - b.unidades_vendidas || a.ingresos_totales - b.ingresos_totales)
+        .slice(0, 10),
+      ultimas_ventas: ultimasVentasRows[0].map((item) => ({
         ...item,
-        productos_vendidos: toNumber(item.productos_vendidos),
+        lineas: toNumber(item.lineas),
         unidades_vendidas: toNumber(item.unidades_vendidas),
-        ingresos_totales: toNumber(item.ingresos_totales),
-        costo_total_estimado: toNumber(item.costo_total_estimado),
-        utilidad_bruta: toNumber(item.utilidad_bruta),
-        margen_bruto:
-          Number(item.ingresos_totales || 0) > 0
-            ? toNumber((Number(item.utilidad_bruta || 0) / Number(item.ingresos_totales || 0)) * 100, 2)
-            : 0
+        total_venta: toNumber(item.total_venta)
       })),
-      por_categoria: categoriasRows[0].map((item) => ({
-        ...item,
-        productos_vendidos: toNumber(item.productos_vendidos),
-        unidades_vendidas: toNumber(item.unidades_vendidas),
-        ingresos_totales: toNumber(item.ingresos_totales),
-        costo_total_estimado: toNumber(item.costo_total_estimado),
-        utilidad_bruta: toNumber(item.utilidad_bruta),
-        margen_bruto:
-          Number(item.ingresos_totales || 0) > 0
-            ? toNumber((Number(item.utilidad_bruta || 0) / Number(item.ingresos_totales || 0)) * 100, 2)
-            : 0
-      })),
-      por_periodo: periodosRows[0].map((item) => ({
-        ...item,
-        pedidos: toNumber(item.pedidos),
-        productos_vendidos: toNumber(item.productos_vendidos),
-        unidades_vendidas: toNumber(item.unidades_vendidas),
-        ingresos_totales: toNumber(item.ingresos_totales),
-        costo_total_estimado: toNumber(item.costo_total_estimado),
-        utilidad_bruta: toNumber(item.utilidad_bruta),
-        margen_bruto:
-          Number(item.ingresos_totales || 0) > 0
-            ? toNumber((Number(item.utilidad_bruta || 0) / Number(item.ingresos_totales || 0)) * 100, 2)
-            : 0
-      })),
+      grafica_mensual: graficaMensual,
+      clientes: {
+        registrados: toNumber(clientesRegistradosRows[0][0]?.total),
+        nuevos_por_mes: clientesNuevosRows[0].map((item) => ({
+          ...item,
+          clientes_nuevos: toNumber(item.clientes_nuevos)
+        })),
+        con_mas_compras: clientesTopRows[0].map((item) => ({
+          ...item,
+          compras: toNumber(item.compras),
+          unidades_vendidas: toNumber(item.unidades_vendidas),
+          total_gastado: toNumber(item.total_gastado)
+        })),
+        historial_compras: clientesHistorialRows[0].map((item) => ({
+          ...item,
+          unidades_vendidas: toNumber(item.unidades_vendidas),
+          total_venta: toNumber(item.total_venta)
+        }))
+      },
+      proveedores_reportes: {
+        productos_suministrados: productosProveedorRows[0].map((item) => ({
+          ...item,
+          productos: toNumber(item.productos),
+          productos_activos: toNumber(item.productos_activos),
+          stock_total: toNumber(item.stock_total)
+        })),
+        compras_realizadas: comprasProveedor,
+        proveedor_mas_utilizado: comprasProveedor[0] || null
+      },
+      trabajadores_reportes: {
+        ventas_realizadas: ventasTrabajadorRows[0].map((item) => ({
+          ...item,
+          ventas: toNumber(item.ventas),
+          unidades_vendidas: toNumber(item.unidades_vendidas),
+          total_venta: toNumber(item.total_venta)
+        })),
+        movimientos_realizados: movimientosTrabajadorRows[0].map((item) => ({
+          ...item,
+          movimientos: toNumber(item.movimientos),
+          entradas: toNumber(item.entradas),
+          salidas: toNumber(item.salidas)
+        })),
+        actividades_registradas: actividadesTrabajadorRows[0].map((item) => ({
+          ...item,
+          actividades: toNumber(item.actividades)
+        }))
+      },
+      por_producto: porProducto,
+      por_proveedor: porProveedor,
+      por_categoria: porCategoria,
+      por_periodo: porPeriodo,
       notas: [
         "La utilidad se estima con el costo promedio actual del producto (precio_mayor).",
-        `La evolucion del periodo se agrupa por ${periodBucket.label}.`
+        `La evolucion del periodo se agrupa por ${periodBucket.label}.`,
+        "Los clientes y trabajadores se calculan sobre la actividad registrada en el rango actual."
       ]
     });
   } catch (error) {

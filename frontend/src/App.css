@@ -581,6 +581,64 @@ button {
   line-height: 1.6;
 }
 
+.report-spotlight {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+}
+
+.report-spotlight strong {
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  color: var(--ink);
+  line-height: 1;
+}
+
+.report-spotlight span {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.report-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.report-chart__row {
+  display: grid;
+  grid-template-columns: minmax(120px, 150px) minmax(0, 1fr) minmax(120px, auto);
+  align-items: center;
+  gap: 14px;
+}
+
+.report-chart__label {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.report-chart__track {
+  position: relative;
+  overflow: hidden;
+  min-height: 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.report-chart__bar {
+  min-width: 8px;
+  min-height: 14px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--primary));
+}
+
+.report-chart__value {
+  justify-self: end;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
 .admin-report {
   display: grid;
   gap: 22px;

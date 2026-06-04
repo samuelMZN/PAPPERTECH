@@ -78,16 +78,33 @@ function getOrderActions(estado) {
   return [];
 }
 
-function getPeriodLabel(value) {
+function getPeriodLabelUi(value) {
   const labels = {
-    dia: "DÃ­a",
+    dia: "D\u00eda",
     semana: "Semana",
     mes: "Mes",
-    anio: "AÃ±o",
+    anio: "A\u00f1o",
     personalizado: "Personalizado"
   };
 
   return labels[value] || value;
+}
+
+function formatMonthPeriodLabel(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const [year, month] = String(value).split("-");
+  if (!year || !month) {
+    return value;
+  }
+
+  const monthDate = new Date(Number(year), Number(month) - 1, 1);
+  return monthDate.toLocaleDateString("es-CO", {
+    month: "short",
+    year: "numeric"
+  });
 }
 
 const adminTabs = [
@@ -362,6 +379,35 @@ function Dashboard() {
       utilidad_bruta: 0,
       margen_bruto: 0,
       ticket_promedio: 0
+    },
+    resumen_rapido: {
+      ventas_hoy: 0,
+      ganancias_hoy: 0,
+      ventas_mes: 0,
+      ganancias_mes: 0,
+      clientes_registrados: 0,
+      productos_stock_bajo: 0
+    },
+    stock_bajo: [],
+    top_productos: [],
+    productos_menos_vendidos: [],
+    ultimas_ventas: [],
+    grafica_mensual: [],
+    clientes: {
+      registrados: 0,
+      nuevos_por_mes: [],
+      con_mas_compras: [],
+      historial_compras: []
+    },
+    proveedores_reportes: {
+      productos_suministrados: [],
+      compras_realizadas: [],
+      proveedor_mas_utilizado: null
+    },
+    trabajadores_reportes: {
+      ventas_realizadas: [],
+      movimientos_realizados: [],
+      actividades_registradas: []
     },
     por_producto: [],
     por_proveedor: [],
@@ -757,6 +803,58 @@ function Dashboard() {
       }
     ];
   }, [salesReport]);
+  const salesQuickCards = useMemo(() => {
+    const resumenRapido = salesReport?.resumen_rapido || {};
+
+    return [
+      {
+        id: "ventas_hoy",
+        label: "Ventas de hoy",
+        value: formatCurrency(resumenRapido.ventas_hoy || 0),
+        note: "Total vendido en el dia actual",
+        tone: "neutral"
+      },
+      {
+        id: "ganancias_hoy",
+        label: "Ganancias de hoy",
+        value: formatSignedCurrency(resumenRapido.ganancias_hoy || 0),
+        note: "Utilidad estimada del dia",
+        tone: Number(resumenRapido.ganancias_hoy || 0) >= 0 ? "positive" : "negative"
+      },
+      {
+        id: "ventas_mes",
+        label: "Ventas del mes",
+        value: formatCurrency(resumenRapido.ventas_mes || 0),
+        note: "Total vendido en el mes actual",
+        tone: "warning"
+      },
+      {
+        id: "ganancias_mes",
+        label: "Ganancias del mes",
+        value: formatSignedCurrency(resumenRapido.ganancias_mes || 0),
+        note: "Utilidad estimada del mes actual",
+        tone: Number(resumenRapido.ganancias_mes || 0) >= 0 ? "positive" : "negative"
+      },
+      {
+        id: "clientes",
+        label: "Clientes registrados",
+        value: Number(resumenRapido.clientes_registrados || 0),
+        note: "Clientes activos registrados",
+        tone: "neutral"
+      },
+      {
+        id: "stock_bajo",
+        label: "Productos con stock bajo",
+        value: Number(resumenRapido.productos_stock_bajo || 0),
+        note: "Productos que necesitan reposicion",
+        tone: Number(resumenRapido.productos_stock_bajo || 0) > 0 ? "warning" : "neutral"
+      }
+    ];
+  }, [salesReport]);
+  const monthlySalesPeak = useMemo(
+    () => Math.max(1, ...((salesReport?.grafica_mensual || []).map((item) => Number(item.ingresos_totales || 0)))),
+    [salesReport]
+  );
   const activeSalesFilterCount = useMemo(
     () => Object.values(salesReportFilters).filter((value) => String(value || "").trim() !== "").length,
     [salesReportFilters]
@@ -765,7 +863,7 @@ function Dashboard() {
     const tags = [];
 
     if (salesReportFilters.periodo && salesReportFilters.periodo !== "personalizado") {
-      tags.push(`Periodo: ${getPeriodLabel(salesReportFilters.periodo)}`);
+      tags.push(`Periodo: ${getPeriodLabelUi(salesReportFilters.periodo)}`);
     }
 
     if (salesReportFilters.fecha_desde || salesReportFilters.fecha_hasta) {
@@ -1487,7 +1585,7 @@ function Dashboard() {
                 <h2>Informe general de PapperTech</h2>
                 <p>
                   Resumen administrativo con ventas, costos, utilidad, perdidas,
-                  estado del inventario y productos mas vendidos.
+                  estado del inventario y productos más vendidos.
                 </p>
                 <div className="admin-report__headline-meta">
                   <span>Periodo acumulado del sistema</span>
@@ -2308,7 +2406,7 @@ function Dashboard() {
             <div className="panel-header">
               <div>
                 <h2>Informe de compras</h2>
-                <p>Consulta compras por fecha, producto y documento de compra con reportes especificos.</p>
+                <p>Consulta compras por fecha, producto y documento de compra con reportes específicos.</p>
               </div>
             </div>
 
@@ -2545,8 +2643,8 @@ function Dashboard() {
               <div>
                 <h2>Reportes de ventas y utilidad</h2>
                 <p>
-                  Consulta cuanto vendiste, cuanto estimas haber ganado y como se mueve la venta por
-                  producto, proveedor, categoria y periodo.
+                  Consulta cuánto vendiste, cuánto estimas haber ganado y cómo se mueve la venta por
+                  producto, proveedor, categoría y periodo.
                 </p>
               </div>
             </div>
@@ -2559,7 +2657,7 @@ function Dashboard() {
                 <div className="purchase-report-filters__copy">
                   <span className="eyebrow purchase-report-filters__eyebrow">Filtros del reporte</span>
                   <p>
-                    Revisa ventas del dÃ­a, la semana, el mes, el aÃ±o o un rango personalizado sin
+                    Revisa ventas del día, la semana, el mes, el año o un rango personalizado sin
                     perder de vista producto y proveedor.
                   </p>
                 </div>
@@ -2583,10 +2681,10 @@ function Dashboard() {
               <label className="form-field-group purchase-report-filters__field">
                 <span>Periodo</span>
                 <select name="periodo" value={salesReportFilters.periodo} onChange={handleSalesReportFilterChange}>
-                  <option value="dia">DÃ­a</option>
+                  <option value="dia">Día</option>
                   <option value="semana">Semana</option>
                   <option value="mes">Mes</option>
-                  <option value="anio">AÃ±o</option>
+                  <option value="anio">Año</option>
                   <option value="personalizado">Personalizado</option>
                 </select>
               </label>
@@ -2653,6 +2751,16 @@ function Dashboard() {
             {salesReportLoading ? <p className="status">Actualizando reporte...</p> : null}
 
             <div className="stats-grid stats-grid--report stats-grid--compact stats-grid--purchase">
+              {salesQuickCards.map((card) => (
+                <article key={card.id} className={`stat-card stat-card--${card.tone}`}>
+                  <small className="stat-card__label">{card.label}</small>
+                  <strong>{card.value}</strong>
+                  <span>{card.note}</span>
+                </article>
+              ))}
+            </div>
+
+            <div className="stats-grid stats-grid--report stats-grid--compact stats-grid--purchase">
               {salesReportCards.map((card) => (
                 <article key={card.id} className={`stat-card stat-card--${card.tone}`}>
                   <small className="stat-card__label">{card.label}</small>
@@ -2672,11 +2780,204 @@ function Dashboard() {
               </div>
             ) : null}
 
+            <div className="dashboard-grid">
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Productos con stock bajo</h2>
+                    <p>Productos activos que necesitan reposicion.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Stock</th>
+                        <th>Minimo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.stock_bajo.length > 0 ? (
+                        salesReport.stock_bajo.map((item) => (
+                          <tr key={`stock-bajo-${item.id}`}>
+                            <td>{item.nombre}</td>
+                            <td>{item.stock_actual}</td>
+                            <td>{item.stock_minimo}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="3">No hay productos con stock bajo para mostrar.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Productos más vendidos</h2>
+                    <p>Ranking de productos con mayor salida.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Unidades</th>
+                        <th>Ventas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.top_productos.length > 0 ? (
+                        salesReport.top_productos.map((item) => (
+                          <tr key={`top-producto-${item.producto_id}`}>
+                            <td>
+                              <strong>{item.producto}</strong>
+                              <small>{item.categoria}</small>
+                            </td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.ingresos_totales)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="3">Todavia no hay ventas para construir el ranking.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Productos menos vendidos</h2>
+                    <p>Productos con rotación más baja dentro del periodo.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Unidades</th>
+                        <th>Ventas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.productos_menos_vendidos.length > 0 ? (
+                        salesReport.productos_menos_vendidos.map((item) => (
+                          <tr key={`menos-vendido-${item.producto_id}`}>
+                            <td>
+                              <strong>{item.producto}</strong>
+                              <small>{item.categoria}</small>
+                            </td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.ingresos_totales)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="3">No hay suficientes ventas para calcular esta vista.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div className="dashboard-grid">
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Últimas ventas</h2>
+                    <p>Pedidos más recientes con venta registrada.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Pedido</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Unidades</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.ultimas_ventas.length > 0 ? (
+                        salesReport.ultimas_ventas.map((item) => (
+                          <tr key={`ultima-venta-${item.pedido_id}`}>
+                            <td>#{item.pedido_id}</td>
+                            <td>{item.cliente}</td>
+                            <td>{formatDateTime(item.fecha_pedido)}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.total_venta)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5">No hay ventas recientes para mostrar.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Gráfica de ventas mensuales</h2>
+                    <p>Comparativo visual de ingresos por mes.</p>
+                  </div>
+                </div>
+
+                <div className="report-chart" role="img" aria-label="Grafica mensual de ventas">
+                  {salesReport.grafica_mensual.length > 0 ? (
+                    salesReport.grafica_mensual.map((item) => (
+                      <div key={`grafica-mes-${item.periodo}`} className="report-chart__row">
+                        <span className="report-chart__label">{formatMonthPeriodLabel(item.periodo)}</span>
+                        <div className="report-chart__track">
+                          <div
+                            className="report-chart__bar"
+                            style={{
+                              width: `${Math.max(
+                                8,
+                                (Number(item.ingresos_totales || 0) / monthlySalesPeak) * 100
+                              )}%`
+                            }}
+                          />
+                        </div>
+                        <strong className="report-chart__value">
+                          {formatCurrency(item.ingresos_totales)}
+                        </strong>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="report-note">No hay suficientes ventas para graficar el periodo.</p>
+                  )}
+                </div>
+              </article>
+            </div>
+
             <article className="panel panel--report-wide">
               <div className="panel-header">
                 <div>
                   <h2>Rentabilidad por producto</h2>
-                  <p>Cuanto vende y cuanto deja cada producto en el periodo seleccionado.</p>
+                  <p>Cuánto vende y cuánto deja cada producto en el periodo seleccionado.</p>
                 </div>
               </div>
 
@@ -2723,8 +3024,136 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
+                    <h2>Clientes registrados</h2>
+                    <p>Total actual de clientes activos en el sistema.</p>
+                  </div>
+                </div>
+
+                <div className="report-spotlight">
+                  <strong>{Number(salesReport.clientes?.registrados || 0)}</strong>
+                  <span>Clientes registrados</span>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Clientes nuevos por mes</h2>
+                    <p>Evolucion mensual de nuevos clientes.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Mes</th>
+                        <th>Clientes nuevos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.clientes?.nuevos_por_mes?.length > 0 ? (
+                        salesReport.clientes.nuevos_por_mes.map((item) => (
+                          <tr key={`clientes-mes-${item.periodo}`}>
+                            <td>{formatMonthPeriodLabel(item.periodo)}</td>
+                            <td>{item.clientes_nuevos}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="2">No hay clientes nuevos para este rango.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Clientes con más compras</h2>
+                    <p>Clientes que más compran y más gastan.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Compras</th>
+                        <th>Unidades</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.clientes?.con_mas_compras?.length > 0 ? (
+                        salesReport.clientes.con_mas_compras.map((item) => (
+                          <tr key={`cliente-top-${item.cliente_id}`}>
+                            <td>{item.cliente}</td>
+                            <td>{item.compras}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.total_gastado)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4">No hay compras suficientes para rankear clientes.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <article className="panel panel--report-wide">
+              <div className="panel-header">
+                <div>
+                  <h2>Historial de compras por cliente</h2>
+                  <p>Últimas compras registradas para revisar frecuencia y ticket.</p>
+                </div>
+              </div>
+
+              <div className="table-wrap table-wrap--report">
+                <table className="data-table data-table--report">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Pedido</th>
+                      <th>Fecha</th>
+                      <th>Unidades</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesReport.clientes?.historial_compras?.length > 0 ? (
+                      salesReport.clientes.historial_compras.map((item) => (
+                        <tr key={`cliente-historial-${item.pedido_id}`}>
+                          <td>{item.cliente}</td>
+                          <td>#{item.pedido_id}</td>
+                          <td>{formatDateTime(item.fecha_pedido)}</td>
+                          <td>{item.unidades_vendidas}</td>
+                          <td>{formatCurrency(item.total_venta)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5">No hay historial de compras para los filtros actuales.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <div className="dashboard-grid">
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
                     <h2>Productos vendidos por proveedor</h2>
-                    <p>Mide cuantos productos y unidades se movieron asociados a cada proveedor.</p>
+                    <p>Mide cuántos productos y unidades se movieron asociados a cada proveedor.</p>
                   </div>
                 </div>
 
@@ -2759,14 +3188,223 @@ function Dashboard() {
                   </table>
                 </div>
               </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Productos suministrados por proveedor</h2>
+                    <p>Cuántos productos y stock total aporta cada proveedor.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Proveedor</th>
+                        <th>Productos</th>
+                        <th>Activos</th>
+                        <th>Stock total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.proveedores_reportes?.productos_suministrados?.length > 0 ? (
+                        salesReport.proveedores_reportes.productos_suministrados.map((item) => (
+                          <tr key={`prov-productos-${item.proveedor_id}`}>
+                            <td>{item.proveedor}</td>
+                            <td>{item.productos}</td>
+                            <td>{item.productos_activos}</td>
+                            <td>{item.stock_total}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4">No hay relacion proveedor-producto para mostrar.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Compras realizadas a proveedores</h2>
+                    <p>Compras, productos y unidades recibidas por proveedor.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Proveedor</th>
+                        <th>Compras</th>
+                        <th>Productos</th>
+                        <th>Unidades</th>
+                        <th>Total invertido</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.proveedores_reportes?.compras_realizadas?.length > 0 ? (
+                        salesReport.proveedores_reportes.compras_realizadas.map((item) => (
+                          <tr key={`prov-compras-${item.proveedor_id}`}>
+                            <td>{item.proveedor}</td>
+                            <td>{item.compras}</td>
+                            <td>{item.productos}</td>
+                            <td>{item.unidades}</td>
+                            <td>{formatCurrency(item.total_invertido)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5">No hay compras a proveedores con los filtros actuales.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
             </div>
 
             <div className="dashboard-grid">
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Rendimiento por categoria</h2>
-                    <p>Compara que familias venden mas y cuales dejan mejor utilidad.</p>
+                    <h2>Proveedor mas utilizado</h2>
+                    <p>Proveedor lider segun volumen de compras registradas.</p>
+                  </div>
+                </div>
+
+                {salesReport.proveedores_reportes?.proveedor_mas_utilizado ? (
+                  <div className="report-spotlight">
+                    <strong>{salesReport.proveedores_reportes.proveedor_mas_utilizado.proveedor}</strong>
+                    <span>
+                      {salesReport.proveedores_reportes.proveedor_mas_utilizado.compras} compras y{" "}
+                      {salesReport.proveedores_reportes.proveedor_mas_utilizado.unidades} unidades
+                    </span>
+                  </div>
+                ) : (
+                  <p className="report-note">Todavia no hay un proveedor destacado en el rango actual.</p>
+                )}
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Ventas realizadas por trabajador</h2>
+                    <p>Ventas atribuidas al usuario que opero el pedido.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Trabajador</th>
+                        <th>Ventas</th>
+                        <th>Unidades</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.trabajadores_reportes?.ventas_realizadas?.length > 0 ? (
+                        salesReport.trabajadores_reportes.ventas_realizadas.map((item) => (
+                          <tr key={`trabajador-ventas-${item.usuario_id}`}>
+                            <td>{item.usuario}</td>
+                            <td>{item.ventas}</td>
+                            <td>{item.unidades_vendidas}</td>
+                            <td>{formatCurrency(item.total_venta)}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4">No hay ventas asociadas a trabajadores en este rango.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Movimientos de inventario realizados</h2>
+                    <p>Entradas y salidas registradas por trabajador.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Trabajador</th>
+                        <th>Movimientos</th>
+                        <th>Entradas</th>
+                        <th>Salidas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.trabajadores_reportes?.movimientos_realizados?.length > 0 ? (
+                        salesReport.trabajadores_reportes.movimientos_realizados.map((item) => (
+                          <tr key={`trabajador-mov-${item.usuario_id}`}>
+                            <td>{item.usuario}</td>
+                            <td>{item.movimientos}</td>
+                            <td>{item.entradas}</td>
+                            <td>{item.salidas}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4">No hay movimientos de inventario para mostrar.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Actividades registradas</h2>
+                    <p>Resumen de auditoria por usuario trabajador o administrador.</p>
+                  </div>
+                </div>
+
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report">
+                    <thead>
+                      <tr>
+                        <th>Usuario</th>
+                        <th>Actividades</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesReport.trabajadores_reportes?.actividades_registradas?.length > 0 ? (
+                        salesReport.trabajadores_reportes.actividades_registradas.map((item) => (
+                          <tr key={`trabajador-actividad-${item.usuario_id || item.usuario}`}>
+                            <td>{item.usuario || "Sin usuario"}</td>
+                            <td>{item.actividades}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="2">No hay actividades registradas en auditoria para este rango.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="panel">
+                <div className="panel-header">
+                  <div>
+                    <h2>Rendimiento por categoría</h2>
+                    <p>Compara qué familias venden más y cuáles dejan mejor utilidad.</p>
                   </div>
                 </div>
 
@@ -2825,7 +3463,11 @@ function Dashboard() {
                       {salesReport.por_periodo.length > 0 ? (
                         salesReport.por_periodo.map((item) => (
                           <tr key={`sales-period-${item.periodo}`}>
-                            <td>{item.periodo}</td>
+                            <td>
+                              {String(item.periodo).length === 7
+                                ? formatMonthPeriodLabel(item.periodo)
+                                : item.periodo}
+                            </td>
                             <td>{item.pedidos}</td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -3398,3 +4040,5 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+

@@ -2848,7 +2848,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="3">Todavia no hay ventas para construir el ranking.</td>
+                          <td colSpan="3">Todavía no hay ventas para construir el ranking.</td>
                         </tr>
                       )}
                     </tbody>
@@ -2945,7 +2945,7 @@ function Dashboard() {
                   </div>
                 </div>
 
-                <div className="report-chart" role="img" aria-label="Grafica mensual de ventas">
+                <div className="report-chart" role="img" aria-label="Gráfica mensual de ventas">
                   {salesReport.grafica_mensual.length > 0 ? (
                     salesReport.grafica_mensual.map((item) => (
                       <div key={`grafica-mes-${item.periodo}`} className="report-chart__row">
@@ -3039,7 +3039,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Clientes nuevos por mes</h2>
-                    <p>Evolucion mensual de nuevos clientes.</p>
+                    <p>Evolución mensual de nuevos clientes.</p>
                   </div>
                 </div>
 
@@ -3286,7 +3286,7 @@ function Dashboard() {
                     </span>
                   </div>
                 ) : (
-                  <p className="report-note">Todavia no hay un proveedor destacado en el rango actual.</p>
+                  <p className="report-note">Todavía no hay un proveedor destacado en el rango actual.</p>
                 )}
               </article>
 
@@ -3443,8 +3443,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Evolucion del periodo</h2>
-                    <p>Te deja ver si el periodo se esta moviendo por dia o por mes.</p>
+                    <h2>Evolución del periodo</h2>
+                    <p>Te deja ver si el periodo se está moviendo por día o por mes.</p>
                   </div>
                 </div>
 
@@ -4040,5 +4040,6 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
 
 

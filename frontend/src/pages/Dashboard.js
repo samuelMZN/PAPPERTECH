@@ -115,7 +115,7 @@ const adminTabs = [
   { id: "reportes", label: "Reportes" },
   { id: "devoluciones", label: "Devoluciones" },
   { id: "usuarios", label: "Usuarios" },
-  { id: "categorias", label: "Categorias" },
+  { id: "categorías", label: "Categorías" },
   { id: "marcas", label: "Marcas" },
   { id: "proveedores", label: "Proveedores" }
 ];
@@ -136,7 +136,7 @@ const initialProductForm = {
   id: null,
   nombre: "",
   descripcion: "",
-  categoria_id: "",
+  categoría_id: "",
   marca_id: "",
   proveedor_id: "",
   margen_porcentaje: "",
@@ -197,7 +197,7 @@ const initialProviderForm = {
 const initialCrudPanels = {
   productos: false,
   usuarios: false,
-  categorias: false,
+  categorías: false,
   marcas: false,
   proveedores: false
 };
@@ -223,12 +223,12 @@ function getDefaultMarginForCategoryName(name) {
   return DEFAULT_MARGIN_BY_CATEGORY[normalizeCategoryName(name)] ?? 30;
 }
 
-function getSuggestedMarginForCategoryId(categoryId, categorias = []) {
+function getSuggestedMarginForCategoryId(categoryId, categorías = []) {
   if (!categoryId) {
     return "";
   }
 
-  const category = categorias.find((item) => String(item.id) === String(categoryId));
+  const category = categorías.find((item) => String(item.id) === String(categoryId));
   const suggestedMargin = getDefaultMarginForCategoryName(category?.nombre);
   return String(suggestedMargin);
 }
@@ -239,7 +239,7 @@ function buildProductOptionLabel(item, options = {}) {
   }
 
   const { includeStock = false, includeProvider = false } = options;
-  const descriptors = [item.categoria, item.marca];
+  const descriptors = [item.categoría, item.marca];
 
   if (includeProvider && item.proveedor) {
     descriptors.push(item.proveedor);
@@ -330,7 +330,7 @@ function Dashboard() {
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [catalogos, setCatalogos] = useState({
-    categorias: [],
+    categorías: [],
     marcas: [],
     proveedores: []
   });
@@ -411,7 +411,7 @@ function Dashboard() {
     },
     por_producto: [],
     por_proveedor: [],
-    por_categoria: [],
+    por_categoría: [],
     por_periodo: [],
     notas: []
   });
@@ -606,7 +606,7 @@ function Dashboard() {
     return products.filter((item) => {
       return (
         String(item.nombre || "").toLowerCase().includes(term) ||
-        String(item.categoria || "").toLowerCase().includes(term) ||
+        String(item.categoría || "").toLowerCase().includes(term) ||
         String(item.marca || "").toLowerCase().includes(term)
       );
     });
@@ -632,10 +632,10 @@ function Dashboard() {
   }, [userQuery, users]);
 
   const visibleCategories = useMemo(() => {
-    return catalogos.categorias.filter((item) =>
+    return catalogos.categorías.filter((item) =>
       matchesSearch(categoryQuery, item.nombre, item.descripcion, item.activo ? "activa" : "inactiva")
     );
-  }, [catalogos.categorias, categoryQuery]);
+  }, [catalogos.categorías, categoryQuery]);
 
   const visibleBrands = useMemo(() => {
     return catalogos.marcas.filter((item) =>
@@ -913,15 +913,15 @@ function Dashboard() {
   const handleProductChange = (event) => {
     const { name, value } = event.target;
     setProductForm((current) => {
-      if (name === "categoria_id" && !current.id) {
-        const previousSuggestedMargin = getSuggestedMarginForCategoryId(current.categoria_id, catalogos.categorias);
-        const nextSuggestedMargin = getSuggestedMarginForCategoryId(value, catalogos.categorias);
+      if (name === "categoría_id" && !current.id) {
+        const previousSuggestedMargin = getSuggestedMarginForCategoryId(current.categoría_id, catalogos.categorías);
+        const nextSuggestedMargin = getSuggestedMarginForCategoryId(value, catalogos.categorías);
         const shouldReplaceMargin =
           !current.margen_porcentaje || String(current.margen_porcentaje) === String(previousSuggestedMargin);
 
         return {
           ...current,
-          categoria_id: value,
+          categoría_id: value,
           margen_porcentaje: shouldReplaceMargin ? nextSuggestedMargin : current.margen_porcentaje
         };
       }
@@ -979,7 +979,7 @@ function Dashboard() {
       producto_id: Number(product.id),
       nombre: product.nombre,
       detalle: [
-        product.categoria || "Sin categoria",
+        product.categoría || "Sin categoría",
         product.marca || "Sin marca",
         `stock ${Number(product.stock || 0)}`
       ].join(" - "),
@@ -1112,7 +1112,7 @@ function Dashboard() {
   const openCreateCategory = () => {
     resetMessages();
     setCategoryForm(initialCategoryForm);
-    setCrudPanelOpen("categorias", true);
+    setCrudPanelOpen("categorías", true);
   };
 
   const openCreateBrand = () => {
@@ -1203,7 +1203,7 @@ function Dashboard() {
         body: {
           nombre: productForm.nombre,
           descripcion: productForm.descripcion,
-          categoria_id: productForm.categoria_id ? Number(productForm.categoria_id) : null,
+          categoría_id: productForm.categoría_id ? Number(productForm.categoría_id) : null,
           marca_id: productForm.marca_id ? Number(productForm.marca_id) : null,
           proveedor_id: productForm.proveedor_id ? Number(productForm.proveedor_id) : null,
           margen_porcentaje: Number(productForm.margen_porcentaje || 0),
@@ -1233,7 +1233,7 @@ function Dashboard() {
       id: item.id,
       nombre: item.nombre,
       descripcion: item.descripcion || "",
-      categoria_id: item.categoria_id || "",
+      categoría_id: item.categoría_id || "",
       marca_id: item.marca_id || "",
       proveedor_id: item.proveedor_id || "",
       margen_porcentaje: item.margen_porcentaje ?? "",
@@ -1323,22 +1323,22 @@ function Dashboard() {
   };
 
   const deleteCategory = async (item) => {
-    if (!window.confirm(`Vas a eliminar la categoria "${item.nombre}". Esta accion no se puede deshacer.`)) {
+    if (!window.confirm(`Vas a eliminar la categoría "${item.nombre}". Esta accion no se puede deshacer.`)) {
       return;
     }
 
     resetMessages();
 
     try {
-      await apiRequest(`/catalogos/categorias/${item.id}`, {
+      await apiRequest(`/catalogos/categorías/${item.id}`, {
         method: "DELETE",
         token
       });
 
-      setSuccess("Categoria eliminada correctamente.");
+      setSuccess("Categoría eliminada correctamente.");
       if (String(categoryForm.id) === String(item.id)) {
         setCategoryForm(initialCategoryForm);
-        setCrudPanelOpen("categorias", false);
+        setCrudPanelOpen("categorías", false);
       }
       await loadData();
     } catch (requestError) {
@@ -1352,7 +1352,7 @@ function Dashboard() {
 
     try {
       await apiRequest(
-        categoryForm.id ? `/catalogos/categorias/${categoryForm.id}` : "/catalogos/categorias",
+        categoryForm.id ? `/catalogos/categorías/${categoryForm.id}` : "/catalogos/categorías",
         {
           method: categoryForm.id ? "PUT" : "POST",
           token,
@@ -1361,8 +1361,8 @@ function Dashboard() {
       );
 
       setCategoryForm(initialCategoryForm);
-      setCrudPanelOpen("categorias", false);
-      setSuccess("Categoria guardada correctamente.");
+      setCrudPanelOpen("categorías", false);
+      setSuccess("Categoría guardada correctamente.");
       await loadData();
     } catch (requestError) {
       setError(requestError.message);
@@ -1508,14 +1508,14 @@ function Dashboard() {
   };
 
   const startEditCategory = (item) => {
-    setActiveTab("categorias");
+    setActiveTab("categorías");
     setCategoryForm({
       id: item.id,
       nombre: item.nombre,
       descripcion: item.descripcion || "",
       activo: Boolean(item.activo)
     });
-    setCrudPanelOpen("categorias", true);
+    setCrudPanelOpen("categorías", true);
   };
 
   const startEditBrand = (item) => {
@@ -1585,7 +1585,7 @@ function Dashboard() {
                 <h2>Informe general de PapperTech</h2>
                 <p>
                   Resumen administrativo con ventas, costos, utilidad, perdidas,
-                  estado del inventario y productos m�s vendidos.
+                  estado del inventario y productos más vendidos.
                 </p>
                 <div className="admin-report__headline-meta">
                   <span>Periodo acumulado del sistema</span>
@@ -2004,7 +2004,7 @@ function Dashboard() {
                 <strong>{productForm.id ? "Editando producto" : "Creando producto"}</strong>
                   <span>
                     {productForm.id
-                      ? "Puedes cambiar nombre, categoria, proveedor, margen, descuentos e imagen sin tocar el stock directo."
+                      ? "Puedes cambiar nombre, categoría, proveedor, margen, descuentos e imagen sin tocar el stock directo."
                       : "El producto se crea sin precio manual. El valor de venta se calcula cuando compras al proveedor usando el porcentaje de margen."}
                   </span>
                 </div>
@@ -2030,9 +2030,9 @@ function Dashboard() {
                 onChange={handleProductChange}
                 placeholder="Descripcion"
               />
-              <select name="categoria_id" value={productForm.categoria_id} onChange={handleProductChange}>
-                <option value="">Categoria</option>
-                {catalogos.categorias.map((item) => (
+              <select name="categoría_id" value={productForm.categoría_id} onChange={handleProductChange}>
+                <option value="">Categoría</option>
+                {catalogos.categorías.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.nombre}
                   </option>
@@ -2064,9 +2064,9 @@ function Dashboard() {
                 placeholder="Margen de venta (%)"
                 required
               />
-              {!productForm.id && productForm.categoria_id ? (
+              {!productForm.id && productForm.categoría_id ? (
                 <div className="form-note">
-                  Sugerido para esta categoria: {getSuggestedMarginForCategoryId(productForm.categoria_id, catalogos.categorias)}%
+                  Sugerido para esta categoría: {getSuggestedMarginForCategoryId(productForm.categoría_id, catalogos.categorías)}%
                 </div>
               ) : null}
 
@@ -2148,7 +2148,7 @@ function Dashboard() {
                 className="search-input"
                 value={productQuery}
                 onChange={(event) => setProductQuery(event.target.value)}
-                placeholder="Busca por nombre, categoria o marca"
+                placeholder="Busca por nombre, categoría o marca"
               />
               <button
                 className="btn btn-outline"
@@ -2165,7 +2165,7 @@ function Dashboard() {
                 <thead>
                   <tr>
                     <th>Producto</th>
-                    <th>Categoria</th>
+                    <th>Categoría</th>
                     <th>Detal</th>
                     <th>Margen</th>
                     <th>Proveedor</th>
@@ -2180,7 +2180,7 @@ function Dashboard() {
                     visibleProducts.map((item) => (
                       <tr key={item.id}>
                         <td>{item.nombre}</td>
-                        <td>{item.categoria || "-"}</td>
+                        <td>{item.categoría || "-"}</td>
                         <td>{formatCatalogPrice(item.precio_venta)}</td>
                         <td>{formatPercent(item.margen_porcentaje || 0)}</td>
                         <td>{item.proveedor || "-"}</td>
@@ -2302,7 +2302,7 @@ function Dashboard() {
                   <strong>{selectedPurchaseProduct.nombre}</strong>
                   <span>
                     {[
-                      selectedPurchaseProduct.categoria || "Sin categoria",
+                      selectedPurchaseProduct.categoría || "Sin categoría",
                       selectedPurchaseProduct.marca || "Sin marca",
                       `stock ${Number(selectedPurchaseProduct.stock || 0)}`
                     ].join(" - ")}
@@ -2406,7 +2406,7 @@ function Dashboard() {
             <div className="panel-header">
               <div>
                 <h2>Informe de compras</h2>
-                <p>Consulta compras por fecha, producto y documento de compra con reportes espec�ficos.</p>
+                <p>Consulta compras por fecha, producto y documento de compra con reportes específicos.</p>
               </div>
             </div>
 
@@ -2643,8 +2643,8 @@ function Dashboard() {
               <div>
                 <h2>Reportes de ventas y utilidad</h2>
                 <p>
-                  Consulta cu�nto vendiste, cu�nto estimas haber ganado y c�mo se mueve la venta por
-                  producto, proveedor, categor�a y periodo.
+                  Consulta cuánto vendiste, cuánto estimas haber ganado y cómo se mueve la venta por
+                  producto, proveedor, categoría y periodo.
                 </p>
               </div>
             </div>
@@ -2657,7 +2657,7 @@ function Dashboard() {
                 <div className="purchase-report-filters__copy">
                   <span className="eyebrow purchase-report-filters__eyebrow">Filtros del reporte</span>
                   <p>
-                    Revisa ventas del d�a, la semana, el mes, el a�o o un rango personalizado sin
+                    Revisa ventas del día, la semana, el mes, el año o un rango personalizado sin
                     perder de vista producto y proveedor.
                   </p>
                 </div>
@@ -2681,10 +2681,10 @@ function Dashboard() {
               <label className="form-field-group purchase-report-filters__field">
                 <span>Periodo</span>
                 <select name="periodo" value={salesReportFilters.periodo} onChange={handleSalesReportFilterChange}>
-                  <option value="dia">D�a</option>
+                  <option value="dia">Día</option>
                   <option value="semana">Semana</option>
                   <option value="mes">Mes</option>
-                  <option value="anio">A�o</option>
+                  <option value="anio">Año</option>
                   <option value="personalizado">Personalizado</option>
                 </select>
               </label>
@@ -2820,7 +2820,7 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Productos m�s vendidos</h2>
+                    <h2>Productos más vendidos</h2>
                     <p>Ranking de productos con mayor salida.</p>
                   </div>
                 </div>
@@ -2840,7 +2840,7 @@ function Dashboard() {
                           <tr key={`top-producto-${item.producto_id}`}>
                             <td>
                               <strong>{item.producto}</strong>
-                              <small>{item.categoria}</small>
+                              <small>{item.categoría}</small>
                             </td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -2848,7 +2848,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="3">Todav�a no hay ventas para construir el ranking.</td>
+                          <td colSpan="3">Todavía no hay ventas para construir el ranking.</td>
                         </tr>
                       )}
                     </tbody>
@@ -2860,7 +2860,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Productos menos vendidos</h2>
-                    <p>Productos con rotaci�n m�s baja dentro del periodo.</p>
+                    <p>Productos con rotación más baja dentro del periodo.</p>
                   </div>
                 </div>
 
@@ -2879,7 +2879,7 @@ function Dashboard() {
                           <tr key={`menos-vendido-${item.producto_id}`}>
                             <td>
                               <strong>{item.producto}</strong>
-                              <small>{item.categoria}</small>
+                              <small>{item.categoría}</small>
                             </td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -2900,8 +2900,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>�ltimas ventas</h2>
-                    <p>Pedidos m�s recientes con venta registrada.</p>
+                    <h2>Últimas ventas</h2>
+                    <p>Pedidos más recientes con venta registrada.</p>
                   </div>
                 </div>
 
@@ -2940,12 +2940,12 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Gr�fica de ventas mensuales</h2>
+                    <h2>Gráfica de ventas mensuales</h2>
                     <p>Comparativo visual de ingresos por mes.</p>
                   </div>
                 </div>
 
-                <div className="report-chart" role="img" aria-label="Gr�fica mensual de ventas">
+                <div className="report-chart" role="img" aria-label="Gráfica mensual de ventas">
                   {salesReport.grafica_mensual.length > 0 ? (
                     salesReport.grafica_mensual.map((item) => (
                       <div key={`grafica-mes-${item.periodo}`} className="report-chart__row">
@@ -2977,7 +2977,7 @@ function Dashboard() {
               <div className="panel-header">
                 <div>
                   <h2>Rentabilidad por producto</h2>
-                  <p>Cu�nto vende y cu�nto deja cada producto en el periodo seleccionado.</p>
+                  <p>Cuánto vende y cuánto deja cada producto en el periodo seleccionado.</p>
                 </div>
               </div>
 
@@ -3000,7 +3000,7 @@ function Dashboard() {
                         <tr key={`sales-product-${item.producto_id}`}>
                           <td>
                             <strong>{item.producto}</strong>
-                            <small>{item.categoria}</small>
+                            <small>{item.categoría}</small>
                           </td>
                           <td>{item.proveedor}</td>
                           <td>{item.unidades_vendidas}</td>
@@ -3039,7 +3039,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Clientes nuevos por mes</h2>
-                    <p>Evoluci�n mensual de nuevos clientes.</p>
+                    <p>Evolución mensual de nuevos clientes.</p>
                   </div>
                 </div>
 
@@ -3072,8 +3072,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Clientes con m�s compras</h2>
-                    <p>Clientes que m�s compran y m�s gastan.</p>
+                    <h2>Clientes con más compras</h2>
+                    <p>Clientes que más compran y más gastan.</p>
                   </div>
                 </div>
 
@@ -3112,7 +3112,7 @@ function Dashboard() {
               <div className="panel-header">
                 <div>
                   <h2>Historial de compras por cliente</h2>
-                  <p>�ltimas compras registradas para revisar frecuencia y ticket.</p>
+                  <p>Últimas compras registradas para revisar frecuencia y ticket.</p>
                 </div>
               </div>
 
@@ -3153,7 +3153,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Productos vendidos por proveedor</h2>
-                    <p>Mide cu�ntos productos y unidades se movieron asociados a cada proveedor.</p>
+                    <p>Mide cuántos productos y unidades se movieron asociados a cada proveedor.</p>
                   </div>
                 </div>
 
@@ -3193,7 +3193,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Productos suministrados por proveedor</h2>
-                    <p>Cu�ntos productos y stock total aporta cada proveedor.</p>
+                    <p>Cuántos productos y stock total aporta cada proveedor.</p>
                   </div>
                 </div>
 
@@ -3286,7 +3286,7 @@ function Dashboard() {
                     </span>
                   </div>
                 ) : (
-                  <p className="report-note">Todav�a no hay un proveedor destacado en el rango actual.</p>
+                  <p className="report-note">Todavía no hay un proveedor destacado en el rango actual.</p>
                 )}
               </article>
 
@@ -3370,7 +3370,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Actividades registradas</h2>
-                    <p>Resumen de auditoria por usuario trabajador o administrador.</p>
+                    <p>Resumen de auditoría por usuario trabajador o administrador.</p>
                   </div>
                 </div>
 
@@ -3392,7 +3392,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="2">No hay actividades registradas en auditoria para este rango.</td>
+                          <td colSpan="2">No hay actividades registradas en auditoría para este rango.</td>
                         </tr>
                       )}
                     </tbody>
@@ -3403,8 +3403,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Rendimiento por categor�a</h2>
-                    <p>Compara qu� familias venden m�s y cu�les dejan mejor utilidad.</p>
+                    <h2>Rendimiento por categoría</h2>
+                    <p>Compara qué familias venden más y cuáles dejan mejor utilidad.</p>
                   </div>
                 </div>
 
@@ -3412,7 +3412,7 @@ function Dashboard() {
                   <table className="data-table data-table--report data-table--report-category">
                     <thead>
                       <tr>
-                        <th>Categoria</th>
+                        <th>Categoría</th>
                         <th>Productos</th>
                         <th>Unidades</th>
                         <th>Ventas</th>
@@ -3420,10 +3420,10 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {salesReport.por_categoria.length > 0 ? (
-                        salesReport.por_categoria.map((item) => (
-                          <tr key={`sales-category-${item.categoria_id}`}>
-                            <td>{item.categoria}</td>
+                      {salesReport.por_categoría.length > 0 ? (
+                        salesReport.por_categoría.map((item) => (
+                          <tr key={`sales-category-${item.categoría_id}`}>
+                            <td>{item.categoría}</td>
                             <td>{item.productos_vendidos}</td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -3432,7 +3432,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="5">No hay ventas por categoria con los filtros actuales.</td>
+                          <td colSpan="5">No hay ventas por categoría con los filtros actuales.</td>
                         </tr>
                       )}
                     </tbody>
@@ -3443,8 +3443,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Evoluci�n del periodo</h2>
-                    <p>Te deja ver si el periodo se est� moviendo por d�a o por mes.</p>
+                    <h2>Evolución del periodo</h2>
+                    <p>Te deja ver si el periodo se está moviendo por día o por mes.</p>
                   </div>
                 </div>
 
@@ -3631,13 +3631,13 @@ function Dashboard() {
         </section>
       ) : null}
 
-      {activeTab === "categorias" ? (
+      {activeTab === "categorías" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          {crudPanels.categorias ? (
+          {crudPanels.categorías ? (
           <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
-                <h2>{categoryForm.id ? "Editar categoria" : "Agregar categoria"}</h2>
+                <h2>{categoryForm.id ? "Editar categoría" : "Agregar categoría"}</h2>
                 <p>Organiza el catalogo por familias de producto.</p>
               </div>
             </div>
@@ -3651,7 +3651,7 @@ function Dashboard() {
               </select>
               <div className="form-actions form-actions--catalog">
                 <button className="btn btn-primary" type="submit">
-                  {categoryForm.id ? "Actualizar categoria" : "Crear categoria"}
+                  {categoryForm.id ? "Actualizar categoría" : "Crear categoría"}
                 </button>
                 {categoryForm.id ? (
                   <button className="btn btn-outline" type="button" onClick={openCreateCategory}>
@@ -3663,7 +3663,7 @@ function Dashboard() {
                   type="button"
                   onClick={() => {
                     setCategoryForm(initialCategoryForm);
-                    setCrudPanelOpen("categorias", false);
+                    setCrudPanelOpen("categorías", false);
                   }}
                 >
                   Cancelar
@@ -3677,7 +3677,7 @@ function Dashboard() {
           <article className="panel">
             <div className="panel-header panel-header--with-actions">
               <div>
-                <h2>Listado de categorias</h2>
+                <h2>Listado de categorías</h2>
                 <p>Filtra y actualiza rapidamente el estado de cada familia de producto.</p>
               </div>
               <div className="panel-actions">
@@ -3692,7 +3692,7 @@ function Dashboard() {
                 className="search-input"
                 value={categoryQuery}
                 onChange={(event) => setCategoryQuery(event.target.value)}
-                placeholder="Busca categoria por nombre, descripcion o estado"
+                placeholder="Busca categoría por nombre, descripcion o estado"
               />
               <button
                 className="btn btn-outline"
@@ -3747,7 +3747,7 @@ function Dashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4">{getCatalogEmptyMessage("categorias", categoryQuery)}</td>
+                      <td colSpan="4">{getCatalogEmptyMessage("categorías", categoryQuery)}</td>
                     </tr>
                   )}
                 </tbody>
@@ -4040,6 +4040,7 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
 
 
 

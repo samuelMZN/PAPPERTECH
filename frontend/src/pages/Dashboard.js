@@ -78,6 +78,18 @@ function getOrderActions(estado) {
   return [];
 }
 
+function getPeriodLabel(value) {
+  const labels = {
+    dia: "Día",
+    semana: "Semana",
+    mes: "Mes",
+    anio: "Año",
+    personalizado: "Personalizado"
+  };
+
+  return labels[value] || value;
+}
+
 const adminTabs = [
   { id: "resumen", label: "Resumen" },
   { id: "pedidos", label: "Pedidos" },
@@ -753,7 +765,7 @@ function Dashboard() {
     const tags = [];
 
     if (salesReportFilters.periodo && salesReportFilters.periodo !== "personalizado") {
-      tags.push(`Periodo: ${salesReportFilters.periodo}`);
+      tags.push(`Periodo: ${getPeriodLabel(salesReportFilters.periodo)}`);
     }
 
     if (salesReportFilters.fecha_desde || salesReportFilters.fecha_hasta) {
@@ -2547,7 +2559,7 @@ function Dashboard() {
                 <div className="purchase-report-filters__copy">
                   <span className="eyebrow purchase-report-filters__eyebrow">Filtros del reporte</span>
                   <p>
-                    Revisa ventas del dia, la semana, el mes, el ano o un rango personalizado sin
+                    Revisa ventas del día, la semana, el mes, el año o un rango personalizado sin
                     perder de vista producto y proveedor.
                   </p>
                 </div>
@@ -2571,10 +2583,10 @@ function Dashboard() {
               <label className="form-field-group purchase-report-filters__field">
                 <span>Periodo</span>
                 <select name="periodo" value={salesReportFilters.periodo} onChange={handleSalesReportFilterChange}>
-                  <option value="dia">Dia</option>
+                  <option value="dia">Día</option>
                   <option value="semana">Semana</option>
                   <option value="mes">Mes</option>
-                  <option value="anio">Ano</option>
+                  <option value="anio">Año</option>
                   <option value="personalizado">Personalizado</option>
                 </select>
               </label>

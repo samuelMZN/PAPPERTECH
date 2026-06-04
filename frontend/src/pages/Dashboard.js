@@ -2660,54 +2660,54 @@ function Dashboard() {
               </div>
             ) : null}
 
-            <div className="dashboard-grid">
-              <article className="panel">
-                <div className="panel-header">
-                  <div>
-                    <h2>Rentabilidad por producto</h2>
-                    <p>Cuanto vende y cuanto deja cada producto en el periodo seleccionado.</p>
-                  </div>
+            <article className="panel panel--report-wide">
+              <div className="panel-header">
+                <div>
+                  <h2>Rentabilidad por producto</h2>
+                  <p>Cuanto vende y cuanto deja cada producto en el periodo seleccionado.</p>
                 </div>
+              </div>
 
-                <div className="table-wrap">
-                  <table className="data-table data-table--report">
-                    <thead>
-                      <tr>
-                        <th>Producto</th>
-                        <th>Proveedor</th>
-                        <th>Unidades</th>
-                        <th>Ventas</th>
-                        <th>Costo est.</th>
-                        <th>Utilidad</th>
-                        <th>Margen</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesReport.por_producto.length > 0 ? (
-                        salesReport.por_producto.map((item) => (
-                          <tr key={`sales-product-${item.producto_id}`}>
-                            <td>
-                              <strong>{item.producto}</strong>
-                              <small>{item.categoria}</small>
-                            </td>
-                            <td>{item.proveedor}</td>
-                            <td>{item.unidades_vendidas}</td>
-                            <td>{formatCurrency(item.ingresos_totales)}</td>
-                            <td>{formatCurrency(item.costo_total_estimado)}</td>
-                            <td>{formatSignedCurrency(item.utilidad_bruta)}</td>
-                            <td>{formatPercent(item.margen_bruto)}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="7">No hay ventas por producto con los filtros actuales.</td>
+              <div className="table-wrap table-wrap--report">
+                <table className="data-table data-table--report data-table--report-product">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Proveedor</th>
+                      <th>Unidades</th>
+                      <th>Ventas</th>
+                      <th>Costo est.</th>
+                      <th>Utilidad</th>
+                      <th>Margen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salesReport.por_producto.length > 0 ? (
+                      salesReport.por_producto.map((item) => (
+                        <tr key={`sales-product-${item.producto_id}`}>
+                          <td>
+                            <strong>{item.producto}</strong>
+                            <small>{item.categoria}</small>
+                          </td>
+                          <td>{item.proveedor}</td>
+                          <td>{item.unidades_vendidas}</td>
+                          <td>{formatCurrency(item.ingresos_totales)}</td>
+                          <td>{formatCurrency(item.costo_total_estimado)}</td>
+                          <td>{formatSignedCurrency(item.utilidad_bruta)}</td>
+                          <td>{formatPercent(item.margen_bruto)}</td>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </article>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7">No hay ventas por producto con los filtros actuales.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </article>
 
+            <div className="dashboard-grid">
               <article className="panel">
                 <div className="panel-header">
                   <div>
@@ -2716,8 +2716,8 @@ function Dashboard() {
                   </div>
                 </div>
 
-                <div className="table-wrap">
-                  <table className="data-table data-table--report">
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report data-table--report-provider">
                     <thead>
                       <tr>
                         <th>Proveedor</th>
@@ -2758,8 +2758,8 @@ function Dashboard() {
                   </div>
                 </div>
 
-                <div className="table-wrap">
-                  <table className="data-table data-table--report">
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report data-table--report-category">
                     <thead>
                       <tr>
                         <th>Categoria</th>
@@ -2798,8 +2798,8 @@ function Dashboard() {
                   </div>
                 </div>
 
-                <div className="table-wrap">
-                  <table className="data-table data-table--report">
+                <div className="table-wrap table-wrap--report">
+                  <table className="data-table data-table--report data-table--report-period">
                     <thead>
                       <tr>
                         <th>Periodo</th>

@@ -1091,10 +1091,12 @@ button {
 
 .dashboard-sidebar {
   position: sticky;
-  top: calc(var(--topbar-height) + 12px);
+  top: calc(var(--topbar-height) + 2px);
   display: grid;
   gap: 12px;
   padding: 14px 12px;
+  align-self: start;
+  margin-top: -6px;
   max-height: none;
   overflow: visible;
 }

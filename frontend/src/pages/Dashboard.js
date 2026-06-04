@@ -115,7 +115,7 @@ const adminTabs = [
   { id: "reportes", label: "Reportes" },
   { id: "devoluciones", label: "Devoluciones" },
   { id: "usuarios", label: "Usuarios" },
-  { id: "categorías", label: "Categorías" },
+  { id: "categorias", label: "Categorías" },
   { id: "marcas", label: "Marcas" },
   { id: "proveedores", label: "Proveedores" }
 ];
@@ -136,7 +136,7 @@ const initialProductForm = {
   id: null,
   nombre: "",
   descripcion: "",
-  categoría_id: "",
+  categoria_id: "",
   marca_id: "",
   proveedor_id: "",
   margen_porcentaje: "",
@@ -197,7 +197,7 @@ const initialProviderForm = {
 const initialCrudPanels = {
   productos: false,
   usuarios: false,
-  categorías: false,
+  categorias: false,
   marcas: false,
   proveedores: false
 };
@@ -223,12 +223,12 @@ function getDefaultMarginForCategoryName(name) {
   return DEFAULT_MARGIN_BY_CATEGORY[normalizeCategoryName(name)] ?? 30;
 }
 
-function getSuggestedMarginForCategoryId(categoryId, categorías = []) {
+function getSuggestedMarginForCategoryId(categoryId, categorias = []) {
   if (!categoryId) {
     return "";
   }
 
-  const category = categorías.find((item) => String(item.id) === String(categoryId));
+  const category = categorias.find((item) => String(item.id) === String(categoryId));
   const suggestedMargin = getDefaultMarginForCategoryName(category?.nombre);
   return String(suggestedMargin);
 }
@@ -239,7 +239,7 @@ function buildProductOptionLabel(item, options = {}) {
   }
 
   const { includeStock = false, includeProvider = false } = options;
-  const descriptors = [item.categoría, item.marca];
+  const descriptors = [item.categoria, item.marca];
 
   if (includeProvider && item.proveedor) {
     descriptors.push(item.proveedor);
@@ -330,7 +330,7 @@ function Dashboard() {
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [catalogos, setCatalogos] = useState({
-    categorías: [],
+    categorias: [],
     marcas: [],
     proveedores: []
   });
@@ -411,7 +411,7 @@ function Dashboard() {
     },
     por_producto: [],
     por_proveedor: [],
-    por_categoría: [],
+    por_categoria: [],
     por_periodo: [],
     notas: []
   });
@@ -606,7 +606,7 @@ function Dashboard() {
     return products.filter((item) => {
       return (
         String(item.nombre || "").toLowerCase().includes(term) ||
-        String(item.categoría || "").toLowerCase().includes(term) ||
+        String(item.categoria || "").toLowerCase().includes(term) ||
         String(item.marca || "").toLowerCase().includes(term)
       );
     });
@@ -632,10 +632,10 @@ function Dashboard() {
   }, [userQuery, users]);
 
   const visibleCategories = useMemo(() => {
-    return catalogos.categorías.filter((item) =>
+    return catalogos.categorias.filter((item) =>
       matchesSearch(categoryQuery, item.nombre, item.descripcion, item.activo ? "activa" : "inactiva")
     );
-  }, [catalogos.categorías, categoryQuery]);
+  }, [catalogos.categorias, categoryQuery]);
 
   const visibleBrands = useMemo(() => {
     return catalogos.marcas.filter((item) =>
@@ -913,15 +913,15 @@ function Dashboard() {
   const handleProductChange = (event) => {
     const { name, value } = event.target;
     setProductForm((current) => {
-      if (name === "categoría_id" && !current.id) {
-        const previousSuggestedMargin = getSuggestedMarginForCategoryId(current.categoría_id, catalogos.categorías);
-        const nextSuggestedMargin = getSuggestedMarginForCategoryId(value, catalogos.categorías);
+      if (name === "categoria_id" && !current.id) {
+        const previousSuggestedMargin = getSuggestedMarginForCategoryId(current.categoria_id, catalogos.categorias);
+        const nextSuggestedMargin = getSuggestedMarginForCategoryId(value, catalogos.categorias);
         const shouldReplaceMargin =
           !current.margen_porcentaje || String(current.margen_porcentaje) === String(previousSuggestedMargin);
 
         return {
           ...current,
-          categoría_id: value,
+          categoria_id: value,
           margen_porcentaje: shouldReplaceMargin ? nextSuggestedMargin : current.margen_porcentaje
         };
       }
@@ -1112,7 +1112,7 @@ function Dashboard() {
   const openCreateCategory = () => {
     resetMessages();
     setCategoryForm(initialCategoryForm);
-    setCrudPanelOpen("categorías", true);
+    setCrudPanelOpen("categorias", true);
   };
 
   const openCreateBrand = () => {
@@ -1203,7 +1203,7 @@ function Dashboard() {
         body: {
           nombre: productForm.nombre,
           descripcion: productForm.descripcion,
-          categoría_id: productForm.categoría_id ? Number(productForm.categoría_id) : null,
+          categoria_id: productForm.categoria_id ? Number(productForm.categoria_id) : null,
           marca_id: productForm.marca_id ? Number(productForm.marca_id) : null,
           proveedor_id: productForm.proveedor_id ? Number(productForm.proveedor_id) : null,
           margen_porcentaje: Number(productForm.margen_porcentaje || 0),
@@ -1233,7 +1233,7 @@ function Dashboard() {
       id: item.id,
       nombre: item.nombre,
       descripcion: item.descripcion || "",
-      categoría_id: item.categoría_id || "",
+      categoria_id: item.categoria_id || "",
       marca_id: item.marca_id || "",
       proveedor_id: item.proveedor_id || "",
       margen_porcentaje: item.margen_porcentaje ?? "",
@@ -1330,7 +1330,7 @@ function Dashboard() {
     resetMessages();
 
     try {
-      await apiRequest(`/catalogos/categorías/${item.id}`, {
+      await apiRequest(`/catalogos/categorias/${item.id}`, {
         method: "DELETE",
         token
       });
@@ -1338,7 +1338,7 @@ function Dashboard() {
       setSuccess("Categoría eliminada correctamente.");
       if (String(categoryForm.id) === String(item.id)) {
         setCategoryForm(initialCategoryForm);
-        setCrudPanelOpen("categorías", false);
+        setCrudPanelOpen("categorias", false);
       }
       await loadData();
     } catch (requestError) {
@@ -1352,7 +1352,7 @@ function Dashboard() {
 
     try {
       await apiRequest(
-        categoryForm.id ? `/catalogos/categorías/${categoryForm.id}` : "/catalogos/categorías",
+        categoryForm.id ? `/catalogos/categorias/${categoryForm.id}` : "/catalogos/categorias",
         {
           method: categoryForm.id ? "PUT" : "POST",
           token,
@@ -1361,7 +1361,7 @@ function Dashboard() {
       );
 
       setCategoryForm(initialCategoryForm);
-      setCrudPanelOpen("categorías", false);
+      setCrudPanelOpen("categorias", false);
       setSuccess("Categoría guardada correctamente.");
       await loadData();
     } catch (requestError) {
@@ -1508,14 +1508,14 @@ function Dashboard() {
   };
 
   const startEditCategory = (item) => {
-    setActiveTab("categorías");
+    setActiveTab("categorias");
     setCategoryForm({
       id: item.id,
       nombre: item.nombre,
       descripcion: item.descripcion || "",
       activo: Boolean(item.activo)
     });
-    setCrudPanelOpen("categorías", true);
+    setCrudPanelOpen("categorias", true);
   };
 
   const startEditBrand = (item) => {
@@ -2030,9 +2030,9 @@ function Dashboard() {
                 onChange={handleProductChange}
                 placeholder="Descripcion"
               />
-              <select name="categoría_id" value={productForm.categoría_id} onChange={handleProductChange}>
+              <select name="categoria_id" value={productForm.categoria_id} onChange={handleProductChange}>
                 <option value="">Categoría</option>
-                {catalogos.categorías.map((item) => (
+                {catalogos.categorias.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.nombre}
                   </option>
@@ -2064,9 +2064,9 @@ function Dashboard() {
                 placeholder="Margen de venta (%)"
                 required
               />
-              {!productForm.id && productForm.categoría_id ? (
+              {!productForm.id && productForm.categoria_id ? (
                 <div className="form-note">
-                  Sugerido para esta categoría: {getSuggestedMarginForCategoryId(productForm.categoría_id, catalogos.categorías)}%
+                  Sugerido para esta categoría: {getSuggestedMarginForCategoryId(productForm.categoria_id, catalogos.categorias)}%
                 </div>
               ) : null}
 
@@ -2180,7 +2180,7 @@ function Dashboard() {
                     visibleProducts.map((item) => (
                       <tr key={item.id}>
                         <td>{item.nombre}</td>
-                        <td>{item.categoría || "-"}</td>
+                        <td>{item.categoria || "-"}</td>
                         <td>{formatCatalogPrice(item.precio_venta)}</td>
                         <td>{formatPercent(item.margen_porcentaje || 0)}</td>
                         <td>{item.proveedor || "-"}</td>
@@ -2840,7 +2840,7 @@ function Dashboard() {
                           <tr key={`top-producto-${item.producto_id}`}>
                             <td>
                               <strong>{item.producto}</strong>
-                              <small>{item.categoría}</small>
+                              <small>{item.categoria}</small>
                             </td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -2879,7 +2879,7 @@ function Dashboard() {
                           <tr key={`menos-vendido-${item.producto_id}`}>
                             <td>
                               <strong>{item.producto}</strong>
-                              <small>{item.categoría}</small>
+                              <small>{item.categoria}</small>
                             </td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -3000,7 +3000,7 @@ function Dashboard() {
                         <tr key={`sales-product-${item.producto_id}`}>
                           <td>
                             <strong>{item.producto}</strong>
-                            <small>{item.categoría}</small>
+                            <small>{item.categoria}</small>
                           </td>
                           <td>{item.proveedor}</td>
                           <td>{item.unidades_vendidas}</td>
@@ -3420,10 +3420,10 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {salesReport.por_categoría.length > 0 ? (
-                        salesReport.por_categoría.map((item) => (
-                          <tr key={`sales-category-${item.categoría_id}`}>
-                            <td>{item.categoría}</td>
+                      {salesReport.por_categoria.length > 0 ? (
+                        salesReport.por_categoria.map((item) => (
+                          <tr key={`sales-category-${item.categoria_id}`}>
+                            <td>{item.categoria}</td>
                             <td>{item.productos_vendidos}</td>
                             <td>{item.unidades_vendidas}</td>
                             <td>{formatCurrency(item.ingresos_totales)}</td>
@@ -3631,9 +3631,9 @@ function Dashboard() {
         </section>
       ) : null}
 
-      {activeTab === "categorías" ? (
+      {activeTab === "categorias" ? (
         <section className="dashboard-grid dashboard-grid--crud-stack">
-          {crudPanels.categorías ? (
+          {crudPanels.categorias ? (
           <article className="panel panel--crud-editor">
             <div className="panel-header">
               <div>
@@ -3663,7 +3663,7 @@ function Dashboard() {
                   type="button"
                   onClick={() => {
                     setCategoryForm(initialCategoryForm);
-                    setCrudPanelOpen("categorías", false);
+                    setCrudPanelOpen("categorias", false);
                   }}
                 >
                   Cancelar

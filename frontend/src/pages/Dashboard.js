@@ -3219,7 +3219,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4">No hay relacion proveedor-producto para mostrar.</td>
+                          <td colSpan="4">No hay relaci?n proveedor-producto para mostrar.</td>
                         </tr>
                       )}
                     </tbody>
@@ -3272,8 +3272,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Proveedor mas utilizado</h2>
-                    <p>Proveedor lider segun volumen de compras registradas.</p>
+                    <h2>Proveedor m?s utilizado</h2>
+                    <p>Proveedor l?der seg?n volumen de compras registradas.</p>
                   </div>
                 </div>
 
@@ -3294,7 +3294,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Ventas realizadas por trabajador</h2>
-                    <p>Ventas atribuidas al usuario que opero el pedido.</p>
+                    <p>Ventas atribuidas al usuario que oper? el pedido.</p>
                   </div>
                 </div>
 
@@ -3491,8 +3491,8 @@ function Dashboard() {
       {activeTab === "devoluciones" ? (
         <ReturnsManager
           token={token}
-          title="Gestion de devoluciones"
-          subtitle="Procesa devoluciones por pedido, reintegra stock al kardex y genera la tirilla de devolucion."
+          title="Gestión de devoluciones"
+          subtitle="Procesa devoluciones por pedido, reintegra stock al kardex y genera la tirilla de devolución."
           onAfterSubmit={loadData}
         />
       ) : null}
@@ -3516,7 +3516,7 @@ function Dashboard() {
                 type="password"
                 value={userForm.password}
                 onChange={handleUserChange}
-                placeholder={userForm.id ? "Nueva contrasena opcional" : "Contrasena temporal"}
+                placeholder={userForm.id ? "Nueva contrase?a opcional" : "Contrasena temporal"}
                 required={!userForm.id}
               />
               <select name="rol" value={userForm.rol} onChange={handleUserChange}>
@@ -3524,8 +3524,8 @@ function Dashboard() {
                 <option value="trabajador">Trabajador</option>
                 <option value="administrador">Administrador</option>
               </select>
-              <input name="telefono" value={userForm.telefono} onChange={handleUserChange} placeholder="Telefono" />
-              <input name="direccion" value={userForm.direccion} onChange={handleUserChange} placeholder="Direccion" />
+              <input name="telefono" value={userForm.telefono} onChange={handleUserChange} placeholder="Tel?fono" />
+              <input name="direccion" value={userForm.direccion} onChange={handleUserChange} placeholder="Direcci?n" />
               <select name="activo" value={String(userForm.activo)} onChange={handleUserChange}>
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
@@ -3897,9 +3897,9 @@ function Dashboard() {
             <form className="form-grid" onSubmit={submitProvider}>
               <input name="nombre" value={providerForm.nombre} onChange={handleProviderChange} placeholder="Nombre" required />
               <input name="nit" value={providerForm.nit} onChange={handleProviderChange} placeholder="NIT" />
-              <input name="telefono" value={providerForm.telefono} onChange={handleProviderChange} placeholder="Telefono" />
+              <input name="telefono" value={providerForm.telefono} onChange={handleProviderChange} placeholder="Tel?fono" />
               <input name="email" type="email" value={providerForm.email} onChange={handleProviderChange} placeholder="Correo" />
-              <input name="direccion" value={providerForm.direccion} onChange={handleProviderChange} placeholder="Direccion" />
+              <input name="direccion" value={providerForm.direccion} onChange={handleProviderChange} placeholder="Direcci?n" />
               <select name="activo" value={String(providerForm.activo)} onChange={handleProviderChange}>
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
@@ -3966,8 +3966,8 @@ function Dashboard() {
                     <th>Nombre</th>
                     <th>NIT</th>
                     <th>Correo</th>
-                    <th>Telefono</th>
-                    <th>Direccion</th>
+                    <th>Tel?fono</th>
+                    <th>Direcci?n</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>

@@ -2527,7 +2527,7 @@ function Dashboard() {
               </table>
             </div>
 
-            <div className="dashboard-grid dashboard-grid--report-provider">
+            <div className="dashboard-grid dashboard-grid--report-provider dashboard-grid--report-provider-clients">
               <article className="panel">
                 <div className="panel-header">
                   <div>
@@ -3020,7 +3020,7 @@ function Dashboard() {
               </div>
             </article>
 
-            <div className="dashboard-grid dashboard-grid--report-provider">
+            <div className="dashboard-grid dashboard-grid--report-provider dashboard-grid--report-provider-wide">
               <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
@@ -3148,7 +3148,7 @@ function Dashboard() {
               </div>
             </article>
 
-            <div className="dashboard-grid dashboard-grid--report-provider">
+            <div className="dashboard-grid dashboard-grid--report-supplier-top">
               <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
@@ -3268,7 +3268,7 @@ function Dashboard() {
               </article>
             </div>
 
-            <div className="dashboard-grid dashboard-grid--report-provider">
+            <div className="dashboard-grid dashboard-grid--report-worker-summary">
               <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
@@ -3367,7 +3367,7 @@ function Dashboard() {
               </article>
             </div>
 
-            <div className="dashboard-grid dashboard-grid--report-bottom">
+            <div className="dashboard-grid dashboard-grid--report-audit">
               <article className="panel">
                 <div className="panel-header">
                   <div>
@@ -3443,6 +3443,7 @@ function Dashboard() {
               </article>
             </div>
 
+            <div className="dashboard-grid dashboard-grid--report-evolution-wrap">
               <article className="panel panel--report-wide panel--report-evolution">
                 <div className="panel-header">
                   <div>
@@ -3486,6 +3487,7 @@ function Dashboard() {
                   </table>
                 </div>
               </article>
+            </div>
           </article>
         </section>
       ) : null}

@@ -3219,7 +3219,7 @@ function Dashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4">No hay relaci?n proveedor-producto para mostrar.</td>
+                          <td colSpan="4">No hay relación proveedor-producto para mostrar.</td>
                         </tr>
                       )}
                     </tbody>
@@ -3272,8 +3272,8 @@ function Dashboard() {
               <article className="panel">
                 <div className="panel-header">
                   <div>
-                    <h2>Proveedor m?s utilizado</h2>
-                    <p>Proveedor l?der seg?n volumen de compras registradas.</p>
+                    <h2>Proveedor más utilizado</h2>
+                    <p>Proveedor líder según volumen de compras registradas.</p>
                   </div>
                 </div>
 
@@ -3294,7 +3294,7 @@ function Dashboard() {
                 <div className="panel-header">
                   <div>
                     <h2>Ventas realizadas por trabajador</h2>
-                    <p>Ventas atribuidas al usuario que oper? el pedido.</p>
+                    <p>Ventas atribuidas al usuario que operó el pedido.</p>
                   </div>
                 </div>
 
@@ -3516,7 +3516,7 @@ function Dashboard() {
                 type="password"
                 value={userForm.password}
                 onChange={handleUserChange}
-                placeholder={userForm.id ? "Nueva contrase?a opcional" : "Contrasena temporal"}
+                placeholder={userForm.id ? "Nueva contraseña opcional" : "Contraseña temporal"}
                 required={!userForm.id}
               />
               <select name="rol" value={userForm.rol} onChange={handleUserChange}>
@@ -3524,8 +3524,8 @@ function Dashboard() {
                 <option value="trabajador">Trabajador</option>
                 <option value="administrador">Administrador</option>
               </select>
-              <input name="telefono" value={userForm.telefono} onChange={handleUserChange} placeholder="Tel?fono" />
-              <input name="direccion" value={userForm.direccion} onChange={handleUserChange} placeholder="Direcci?n" />
+              <input name="telefono" value={userForm.telefono} onChange={handleUserChange} placeholder="Teléfono" />
+              <input name="direccion" value={userForm.direccion} onChange={handleUserChange} placeholder="Dirección" />
               <select name="activo" value={String(userForm.activo)} onChange={handleUserChange}>
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
@@ -3897,9 +3897,9 @@ function Dashboard() {
             <form className="form-grid" onSubmit={submitProvider}>
               <input name="nombre" value={providerForm.nombre} onChange={handleProviderChange} placeholder="Nombre" required />
               <input name="nit" value={providerForm.nit} onChange={handleProviderChange} placeholder="NIT" />
-              <input name="telefono" value={providerForm.telefono} onChange={handleProviderChange} placeholder="Tel?fono" />
+              <input name="telefono" value={providerForm.telefono} onChange={handleProviderChange} placeholder="Teléfono" />
               <input name="email" type="email" value={providerForm.email} onChange={handleProviderChange} placeholder="Correo" />
-              <input name="direccion" value={providerForm.direccion} onChange={handleProviderChange} placeholder="Direcci?n" />
+              <input name="direccion" value={providerForm.direccion} onChange={handleProviderChange} placeholder="Dirección" />
               <select name="activo" value={String(providerForm.activo)} onChange={handleProviderChange}>
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
@@ -3966,8 +3966,8 @@ function Dashboard() {
                     <th>Nombre</th>
                     <th>NIT</th>
                     <th>Correo</th>
-                    <th>Tel?fono</th>
-                    <th>Direcci?n</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -3979,16 +3979,16 @@ function Dashboard() {
                         <td>{item.nombre}</td>
                         <td>{item.nit || "Sin NIT"}</td>
                         {/*
-                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} • {item.email || "Sin correo"} • {item.telefono || "Sin telefono"}
+                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} • {item.email || "Sin correo"} • {item.telefono || "Sin teléfono"}
                   </span>
                   <span className="catalog-admin-card__meta-clean">
-                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} - {item.email || "Sin correo"} - {item.telefono || "Sin telefono"}
+                    {item.nit ? `NIT ${item.nit}` : "Sin NIT"} - {item.email || "Sin correo"} - {item.telefono || "Sin teléfono"}
                   </span>
-                  <span>{item.direccion || "Sin direccion registrada"}</span>
+                  <span>{item.direccion || "Sin dirección registrada"}</span>
                         */}
                         <td>{item.email || "Sin correo"}</td>
-                        <td>{item.telefono || "Sin telefono"}</td>
-                        <td>{item.direccion || "Sin direccion registrada"}</td>
+                        <td>{item.telefono || "Sin teléfono"}</td>
+                        <td>{item.direccion || "Sin dirección registrada"}</td>
                         <td>
                           <span className={`status-chip ${item.activo ? "status-chip--active" : "status-chip--inactive"}`}>
                             {item.activo ? "Activo" : "Inactivo"}

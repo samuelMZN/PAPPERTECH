@@ -2527,7 +2527,7 @@ function Dashboard() {
               </table>
             </div>
 
-            <div className="dashboard-grid">
+            <div className="dashboard-grid dashboard-grid--report-provider">
               <article className="panel">
                 <div className="panel-header">
                   <div>
@@ -2780,8 +2780,8 @@ function Dashboard() {
               </div>
             ) : null}
 
-            <div className="dashboard-grid">
-              <article className="panel">
+            <div className="dashboard-grid dashboard-grid--report-ops">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Productos con stock bajo</h2>
@@ -2817,7 +2817,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Productos más vendidos</h2>
@@ -2856,7 +2856,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Productos menos vendidos</h2>
@@ -2896,8 +2896,8 @@ function Dashboard() {
               </article>
             </div>
 
-            <div className="dashboard-grid">
-              <article className="panel">
+            <div className="dashboard-grid dashboard-grid--report-bottom">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Últimas ventas</h2>
@@ -2937,7 +2937,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-category-wide">
                 <div className="panel-header">
                   <div>
                     <h2>Gráfica de ventas mensuales</h2>
@@ -3020,8 +3020,8 @@ function Dashboard() {
               </div>
             </article>
 
-            <div className="dashboard-grid">
-              <article className="panel">
+            <div className="dashboard-grid dashboard-grid--report-provider">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Clientes registrados</h2>
@@ -3148,8 +3148,8 @@ function Dashboard() {
               </div>
             </article>
 
-            <div className="dashboard-grid">
-              <article className="panel">
+            <div className="dashboard-grid dashboard-grid--report-provider">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Productos vendidos por proveedor</h2>
@@ -3189,7 +3189,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Productos suministrados por proveedor</h2>
@@ -3227,7 +3227,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Compras realizadas a proveedores</h2>
@@ -3268,8 +3268,8 @@ function Dashboard() {
               </article>
             </div>
 
-            <div className="dashboard-grid">
-              <article className="panel">
+            <div className="dashboard-grid dashboard-grid--report-provider">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Proveedor más utilizado</h2>
@@ -3290,7 +3290,7 @@ function Dashboard() {
                 )}
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Ventas realizadas por trabajador</h2>
@@ -3328,7 +3328,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-compact">
                 <div className="panel-header">
                   <div>
                     <h2>Movimientos de inventario realizados</h2>
@@ -3365,7 +3365,9 @@ function Dashboard() {
                   </table>
                 </div>
               </article>
+            </div>
 
+            <div className="dashboard-grid dashboard-grid--report-bottom">
               <article className="panel">
                 <div className="panel-header">
                   <div>
@@ -3400,7 +3402,7 @@ function Dashboard() {
                 </div>
               </article>
 
-              <article className="panel">
+              <article className="panel panel--report-category-wide">
                 <div className="panel-header">
                   <div>
                     <h2>Rendimiento por categoría</h2>
@@ -3439,8 +3441,9 @@ function Dashboard() {
                   </table>
                 </div>
               </article>
+            </div>
 
-              <article className="panel">
+              <article className="panel panel--report-wide panel--report-evolution">
                 <div className="panel-header">
                   <div>
                     <h2>Evolución del periodo</h2>
@@ -3483,7 +3486,6 @@ function Dashboard() {
                   </table>
                 </div>
               </article>
-            </div>
           </article>
         </section>
       ) : null}
